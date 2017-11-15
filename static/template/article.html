@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="frame::header">
+	<meta charset="UTF-8">
+	<title>张佳军的个人主页</title>
+	<meta name="description" content="张佳军" />
+
+	<!-- load style and script -->
+	<link rel='stylesheet' th:href="@{/css/base.css}" href='../static/css/base.css'
+		  type='text/css' media='all' />
+	<script th:src="@{/js/base.js}" src="../static/js/base.js"
+			type="text/javascript"></script>
+	<!-- load site icon -->
+	<link rel="icon"
+		  th:href="@{/image/sycki-68x68.png}" href="../static/image/sycki-68x68.png"
+		  sizes="32x32" />
+	<link rel="icon"
+		  th:href="@{/image/sycki-68x68.png}" href="../static/image/sycki-68x68.png"
+		  sizes="192x192" />
+	<link rel="apple-touch-icon-precomposed"
+		  th:href="@{/image/sycki-68x68.png}" href="../static/image/sycki-68x68.png" />
+	<meta name="msapplication-TileImage"
+		  th:content="@{/image/sycki-68x68.png}" content="../static/image/sycki-68x68.png" />
+
+	<script th:src="@{/js/marked.js}" src="../static/js/marked.js" type="text/javascript"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" th:href="@{/css/markdown.css}" href="../static/css/markdown.css">
+
+</head>
+
+
+<script>
+var article_id = "[[${article.id}]]";
+</script>
+<body>
+
+<nav th:replace="frame::navigator">
+</nav>
+
+<section id="sections" class="article-menu">
+<hr>
+</section>
+
+<article id="article" class="markdown-body" th:utext="${article.content}">
+# 文章标题
+正文部分@;*&!@#$"' x
+## 标题h2
+### 标题三
+> hello
+
+	" 2 > 1"
+
+```
+var a = "world";
+cat <<-EOF
+hello!
+now time is `date`
+EOF
+if (a > b & a >c);
+	return;
+
+```
+<h2>is h2</h2>
+-End-
+</article>
+<div class="markdown-body">
+	<hr/>
+	<div class="state-line">
+		<button id="235_thumb_up" onclick="article_desc_thumb_up('235')" th:attr="id=|${article.id}_thumb_up|, onclick=|article_desc_thumb_up('${article.id}')|">
+			<i class="thumb-up"></i><span id="235_thumb_up_value" th:id="|${article.id}_thumb_up_value|" th:text="${article.like_count}">3</span>
+		</button>
+
+		<button >
+			<i class="eyes"></i><span th:text="${article.viewer_count}">0</span>
+		</button>
+		<span class="info" th:utext="|编写日期：${article.create_date}|">编写日期：2018-08-08</span>
+	</div>
+</div>
+
+
+<br>
+
+
+<footer th:include="frame::footer" class="markdown-body">
+</footer>
+
+<br>
+
+</body>
+</html>
+
