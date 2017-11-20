@@ -1,9 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+	"sycki/database"
 	"sycki/structs"
+
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -14,16 +19,13 @@ const (
 )
 
 var (
-	debug         bool
-	model         *structs.Model
-	indexs        string
-	isLatestIndex bool
+	debug bool
+	model *structs.Model
 )
 
 func init() {
 	debug = true
 	model = &structs.Model{make(map[string]interface{})}
-	isLatestIndex = false
 }
 
 //func home(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +44,22 @@ func init() {
 //		view.SendHTML(w, "home")
 //	}
 //}
+
+func article(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	method := r.Method
+	if method == GET {
+		tag := vars["tag"]
+		en_name := vars["en_name"]
+
+		result, err := database.GetArticle(tag, en_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js, _ := json.Marshal(result)
+		w.Write(js)
+	}
+}
 
 func checkHeader(w http.ResponseWriter, r *http.Request) error {
 	if debug {
@@ -66,6 +84,6 @@ func f(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func BaseHandlers(mux *http.ServeMux) {
-	//	mux.HandleFunc("/article", f(article))
+func BaseHandlers(m *mux.Route) {
+	m.HandlerFunc("/{tag:[0-9a-zA-Z-_]{1,20}}/{en_name:[0-9a-zA-Z-_]{1,50}}", f(article))
 }

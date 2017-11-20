@@ -1,6 +1,6 @@
 package structs
 
-type article struct {
+type ArticleFull struct {
 	id           int
 	parent_id    int
 	title        string
@@ -14,4 +14,14 @@ type article struct {
 	like_count   int
 	unlike_count int
 	viewer_count int
+}
+
+type Article struct {
+	Title        string
+	En_name      string
+	Content      string
+	Author       string
+	Like_count   int
+	Viewer_count int
+	Create_date  string
 }

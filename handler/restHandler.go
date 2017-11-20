@@ -1,49 +1,46 @@
 package handler
 
 import (
-	"io"
 	"log"
 	"net/http"
 	"sycki/database"
+
+	"github.com/gorilla/mux"
 )
 
-
-func index(w http.ResponseWriter, r *http.Request) {
+func indexV1(w http.ResponseWriter, r *http.Request) {
 	if checkHeader(w, r) != nil {
 		return
 	}
 	method := r.Method
 	if method == GET {
-		if !isLatestIndex {
-			result, err := database.Index()
-			if err != nil {
-				log.Fatal(err)
-			}
-			indexs = result
-			isLatestIndex = true
+		result, err := database.Index()
+		if err != nil {
+			log.Fatal(err)
 		}
-		model.Clear()
-		model.Set("index", indexs)
-		io.WriteString(w, indexs)
+		w.Write(result)
 	}
 }
 
-func article(w http.ResponseWriter, r *http.Request) {
+func articleV1(w http.ResponseWriter, r *http.Request) {
 	if checkHeader(w, r) != nil {
 		return
 	}
-	key := r.FormValue("key")
+
+	vars := mux.Vars(r)
+	key := vars["key"]
 	method := r.Method
 	if method == GET {
+
 		result, err := database.JGET(key, ".")
 		if err != nil {
 			log.Fatal(err)
 		}
-		io.WriteString(w, result)
+		w.Write(result)
 	}
 }
 
-func RestHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("/article", f(article))
-	mux.HandleFunc("/index", f(index))
+func RestHandlers(m *mux.Route) {
+	m.HandlerFunc("/api/v1/article", f(articleV1))
+	m.HandlerFunc("/api/v1/index", f(indexV1))
 }

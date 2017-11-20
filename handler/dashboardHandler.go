@@ -2,12 +2,14 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func dashboard(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func DashboardHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("/dashboard", f(dashboard))
+func DashboardHandlers(m *mux.Route) {
+	m.HandlerFunc("/dashboard", f(dashboard))
 }

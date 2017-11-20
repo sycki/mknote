@@ -4,12 +4,14 @@ import (
 	"log"
 	"net/http"
 	"sycki/handler"
+
+	"github.com/gorilla/mux"
 )
 
 func StartServer() {
-	mux := http.NewServeMux()
-	handler.BaseHandlers(mux)
-	handler.RestHandlers(mux)
-	handler.DashboardHandlers(mux)
-	log.Fatal(http.ListenAndServe(":80", mux))
+	m := mux.NewRouter()
+	handler.BaseHandlers(m)
+	handler.RestHandlers(m)
+	handler.DashboardHandlers(m)
+	log.Fatal(http.ListenAndServe(":80", m))
 }
