@@ -1,4 +1,4 @@
-package handler
+package blog
 
 import (
 	"encoding/json"
@@ -45,7 +45,7 @@ func init() {
 //	}
 //}
 
-func article(w http.ResponseWriter, r *http.Request) {
+func Article(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	method := r.Method
 	if method == GET {
@@ -54,36 +54,10 @@ func article(w http.ResponseWriter, r *http.Request) {
 
 		result, err := database.GetArticle(tag, en_name)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		js, _ := json.Marshal(result)
 		w.Write(js)
 	}
-}
-
-func checkHeader(w http.ResponseWriter, r *http.Request) error {
-	if debug {
-		return nil
-	}
-	if header := r.Header.Get("x-requested-by"); header != "sycki" {
-		err := errors.New(string(http.StatusNotFound))
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return err
-	}
-	return nil
-}
-
-func f(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err, ok := recover().(error); ok {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		}()
-		h(w, r)
-	}
-}
-
-func BaseHandlers(m *mux.Route) {
-	m.HandlerFunc("/{tag:[0-9a-zA-Z-_]{1,20}}/{en_name:[0-9a-zA-Z-_]{1,50}}", f(article))
 }
