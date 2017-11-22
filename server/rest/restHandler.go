@@ -2,10 +2,9 @@ package rest
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 	"sycki/database"
+	"sycki/log"
 	"sycki/structs"
 
 	"github.com/gorilla/mux"
@@ -48,6 +47,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if method == GET {
 		articleTag, err := database.GetTags()
 		if err != nil {
+			log.Error(err)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -67,6 +67,7 @@ func Article(w http.ResponseWriter, r *http.Request) {
 	if method == GET {
 		articleTag, err := database.GetArticle(key, ".")
 		if err != nil {
+			log.Error(err)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}

@@ -1,8 +1,8 @@
 package server
 
 import (
-	"log"
 	"net/http"
+	"sycki/log"
 	"sycki/server/blog"
 	"sycki/server/rest"
 

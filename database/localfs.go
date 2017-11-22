@@ -30,7 +30,7 @@ func init() {
 ]
 */
 func GetTags() ([]*structs.ArticleTag, error) {
-	artDir := config.Conf.Get("SYCKIWEB_HOME") + "/articles"
+	artDir := config.Get("SYCKIWEB_HOME") + "/articles"
 	subDirInfos, _ := ioutil.ReadDir(artDir)
 	tagArr := []*structs.ArticleTag{}
 	for _, subDirInfo := range subDirInfos {
@@ -50,7 +50,7 @@ func GetTags() ([]*structs.ArticleTag, error) {
 }
 
 func GetArticle(tag string, en_name string) (*structs.Article, error) {
-	artPath := config.Conf.Get("SYCKIWEB_HOME") + "/articles" + "/" + tag + "/" + en_name + ".md"
+	artPath := config.Get("SYCKIWEB_HOME") + "/articles" + "/" + tag + "/" + en_name + ".md"
 	//	artFile,e := os.OpenFile(artPath, os.O_RDONLY, 0666)
 	//	defer artFile.Close()
 	//	if e != nil {

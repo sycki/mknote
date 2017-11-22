@@ -7,20 +7,20 @@ import (
 	"strings"
 )
 
-type Config struct {
+type config struct {
 	conf map[string]string
 }
 
-func (c *Config) Set(k string, v string) {
+func Set(k string, v string) {
 	c.conf[k] = v
 }
 
-func (c *Config) Get(k string) string {
+func Get(k string) string {
 	v, _ := c.conf[k]
 	return v
 }
 
-func (c *Config) GetOr(k string, d string) string {
+func GetOr(k string, d string) string {
 	v, ok := c.conf[k]
 	if ok {
 		return v
@@ -30,22 +30,23 @@ func (c *Config) GetOr(k string, d string) string {
 }
 
 var (
-	Conf *Config
+	c *config
 )
 
 func init() {
-	Conf = NewConfig()
+	c = NewConfig()
 }
 
 // must set keys:
 // SYCKIWEB_HOME
-func NewConfig() *Config {
-	file, err := os.OpenFile("config/syckiweb.conf", os.O_RDONLY, 0666)
+// LOG_FILE
+func NewConfig() *config {
+	file, err := os.OpenFile("config/mknode.conf", os.O_RDONLY, 0666)
 	defer file.Close()
 	if err != nil {
 		panic(err)
 	}
-	conf := &Config{make(map[string]string)}
+	conf := &config{make(map[string]string)}
 	in := bufio.NewReader(file)
 	for {
 		line, err := in.ReadString('\n')
@@ -56,7 +57,7 @@ func NewConfig() *Config {
 		if len(kv) < 2 || strings.HasPrefix(kv[0], "#") {
 			continue
 		}
-		conf.Set(kv[0], kv[1])
+		Set(kv[0], kv[1])
 	}
 	return conf
 }

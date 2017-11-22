@@ -2,8 +2,6 @@ package blog
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 	"sycki/database"
 	"sycki/structs"
