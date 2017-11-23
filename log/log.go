@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sycki/config"
 )
@@ -20,11 +21,33 @@ var g *log.Logger
 
 func init() {
 	logFile := config.GetOr("LOG_FILE", "/var/log/mknode/mknode.log")
-	f, err := os.OpenFile(logFile, os.O_WRONLY, 0666)
+
+	// create log file if not exists
+	_, e1 := os.Stat(logFile)
+	if os.IsNotExist(e1) {
+		log.Println(e1)
+
+		log.Println("create parent directory:", filepath.Dir(logFile))
+		e2 := os.MkdirAll(filepath.Dir(logFile), 0666)
+		if e2 != nil {
+			log.Fatal(e2)
+		}
+
+		log.Println("create log file:", logFile)
+		f, e3 := os.Create(logFile)
+		defer f.Close()
+		if e3 != nil {
+			log.Fatal(e3)
+		}
+	}
+
+	f, err := os.OpenFile(logFile, os.O_APPEND, 0666)
 	defer f.Close()
 	if err != nil {
 		panic(err)
 	}
+
+	log.Println("log to:", logFile)
 	g = log.New(f, "", log.LstdFlags)
 }
 
@@ -51,5 +74,5 @@ func Error(info interface{}) {
 
 func Fatal(info interface{}) {
 	g.Println(format(FATAL, info))
-	os.Exit(3)
+	os.Exit(13)
 }

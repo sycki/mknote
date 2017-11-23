@@ -5,10 +5,10 @@ import (
 	"errors"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
 	"sycki/config"
+	"sycki/log"
 	"sycki/structs"
 )
 
@@ -18,7 +18,7 @@ var (
 
 func init() {
 	Templates = make(map[string]*template.Template)
-	log.Println("INFO init jsonDAO complete.")
+	log.Info("init database complete.")
 }
 
 /*
