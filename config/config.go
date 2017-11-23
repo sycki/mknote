@@ -46,7 +46,13 @@ func NewConfig() *config {
 	if err != nil {
 		panic(err)
 	}
+
+	// create config object and load default properties
 	conf := &config{make(map[string]string)}
+	Set("SYCKIWEB_HOME", ".")
+	Set("LOG_FILE", "/var/log/mknode/mknode.log")
+
+	// load config file to config object
 	in := bufio.NewReader(file)
 	for {
 		line, err := in.ReadString('\n')

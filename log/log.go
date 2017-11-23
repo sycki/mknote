@@ -20,28 +20,19 @@ const (
 var g *log.Logger
 
 func init() {
-	logFile := config.GetOr("LOG_FILE", "/var/log/mknode/mknode.log")
+	logFile := config.Get("LOG_FILE")
+	logPath := filepath.Dir(logFile)
 
-	// create log file if not exists
-	_, e1 := os.Stat(logFile)
-	if os.IsNotExist(e1) {
-		log.Println(e1)
-
-		log.Println("create parent directory:", filepath.Dir(logFile))
-		e2 := os.MkdirAll(filepath.Dir(logFile), 0666)
-		if e2 != nil {
-			log.Fatal(e2)
-		}
-
-		log.Println("create log file:", logFile)
-		f, e3 := os.Create(logFile)
-		defer f.Close()
-		if e3 != nil {
-			log.Fatal(e3)
+	// create parent directory if not exists
+	_, e := os.Stat(logPath)
+	if os.IsNotExist(e) {
+		e := os.MkdirAll(logPath, 0666)
+		if e != nil {
+			log.Fatal(e)
 		}
 	}
 
-	f, err := os.OpenFile(logFile, os.O_APPEND, 0666)
+	f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE, 0666)
 	defer f.Close()
 	if err != nil {
 		panic(err)
