@@ -7,7 +7,6 @@ bin/
 sycki
 _*/
 
-articles/
 # Eclipse files
 .classpath
 .project

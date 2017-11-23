@@ -37,19 +37,19 @@ func Debug(info interface{}) {
 	g.Println(format(DEBUG, info))
 }
 
-func Info(info string) {
+func Info(info interface{}) {
 	g.Println(format(INFO, info))
 }
 
-func Warn(info string) {
+func Warn(info interface{}) {
 	g.Println(format(WARN, info))
 }
 
-func Error(info string) {
+func Error(info interface{}) {
 	g.Println(format(ERROR, info))
 }
 
-func Fatal(info string) {
+func Fatal(info interface{}) {
 	g.Println(format(FATAL, info))
 	os.Exit(3)
 }
