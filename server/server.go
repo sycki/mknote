@@ -1,10 +1,10 @@
 package server
 
 import (
+	"mknote/log"
+	"mknote/server/blog"
+	"mknote/server/rest"
 	"net/http"
-	"sycki/log"
-	"sycki/server/blog"
-	"sycki/server/rest"
 
 	"github.com/gorilla/mux"
 )

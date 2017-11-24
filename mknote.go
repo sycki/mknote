@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sycki/log"
-	"sycki/server"
+	"mknote/log"
+	"mknote/server"
 )
 
 func main() {

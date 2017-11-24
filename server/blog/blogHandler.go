@@ -2,9 +2,9 @@ package blog
 
 import (
 	"encoding/json"
+	"mknote/database"
+	"mknote/structs"
 	"net/http"
-	"sycki/database"
-	"sycki/structs"
 
 	"github.com/gorilla/mux"
 )

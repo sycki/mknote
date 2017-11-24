@@ -5,11 +5,11 @@ import (
 	"errors"
 	"html/template"
 	"io/ioutil"
+	"mknote/config"
+	"mknote/log"
+	"mknote/structs"
 	"strconv"
 	"strings"
-	"sycki/config"
-	"sycki/log"
-	"sycki/structs"
 )
 
 var (

@@ -2,10 +2,10 @@ package rest
 
 import (
 	"encoding/json"
+	"mknote/database"
+	"mknote/log"
+	"mknote/structs"
 	"net/http"
-	"sycki/database"
-	"sycki/log"
-	"sycki/structs"
 
 	"github.com/gorilla/mux"
 )

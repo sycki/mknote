@@ -56,11 +56,11 @@ func NewConfig() *config {
 
 	// setting up default log file
 	sep := string(os.PathSeparator)
-	logFile := workDir + sep + "log" + sep + "mknode.log"
+	logFile := workDir + sep + "log" + sep + "mknote.log"
 	conf.addDefault("log.file", logFile)
 
 	// load config file, exit the program if config file not exists
-	file, err := os.OpenFile("config/mknode.conf", os.O_RDONLY, 0666)
+	file, err := os.OpenFile("config/mknote.conf", os.O_RDONLY, 0666)
 	defer file.Close()
 	if err != nil {
 		panic(err)

@@ -3,10 +3,10 @@ package log
 import (
 	"fmt"
 	"log"
+	"mknote/config"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sycki/config"
 )
 
 const (
