@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	log.Info("start mknode server ...")
+	log.Info("start mknode server...")
 	server.StartServer()
 }
