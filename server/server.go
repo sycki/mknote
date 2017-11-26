@@ -1,13 +1,30 @@
 package server
 
 import (
+	"context"
 	"mknote/log"
 	"mknote/server/blog"
 	"mknote/server/rest"
 	"net/http"
-
-	"github.com/gorilla/mux"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
+
+const (
+	assDir = "static"
+)
+
+func static(w http.ResponseWriter, r *http.Request) {
+	file := assDir + r.URL.Path
+	//	if  strings.Contains(file, "..") {
+	//		log.Error(errInfo, file)
+	//		http.NotFound(w, r)
+	//		return
+	//	}
+	http.ServeFile(w, r, file)
+}
 
 func f(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -21,13 +38,37 @@ func f(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func StartServer() {
-	log.Info("load all handle...")
-	m := mux.NewRouter()
-	m.HandleFunc("/api/v1/article", f(rest.Article))
-	m.HandleFunc("/api/v1/index", f(rest.Index))
-	m.HandleFunc("/{tag:[0-9a-zA-Z-_]+}/{en_name:[0-9a-zA-Z-_]+}", f(blog.Article))
-	http.Handle("/", m)
+	log.Info("load handlers...")
 
+	//	m := mux.NewRouter()
+	m := http.NewServeMux()
+	m.HandleFunc("/assets/", f(static))
+	m.HandleFunc("/articles/", f(blog.Article))
+	m.HandleFunc("/api/v1/articles/", f(rest.Article))
+	m.HandleFunc("/api/v1/like/", f(rest.Article))
+	m.HandleFunc("/api/v1/index", f(rest.Index))
+	//	http.Handle("/", m)
+
+	h := &http.Server{Addr: ":80", Handler: m}
+
+	log.Info("start mknode server...")
+	go func() {
+		log.Fatal(h.ListenAndServe())
+	}()
 	log.Info("mknode started")
-	log.Fatal(http.ListenAndServe(":80", nil))
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM)
+
+	sig := <-sigs
+	log.Warn("recived signal:", sig)
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	err := h.Shutdown(ctx)
+	if err != nil {
+		log.Warn(err)
+	}
+
+	log.Info("mknode gracefully stopped")
+	println("mknode gracefully stopped")
 }

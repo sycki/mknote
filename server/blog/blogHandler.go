@@ -1,12 +1,9 @@
 package blog
 
 import (
-	"encoding/json"
-	"mknote/database"
+	"mknote/config"
 	"mknote/structs"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -17,13 +14,15 @@ const (
 )
 
 var (
-	debug bool
-	model *structs.Model
+	debug   bool
+	model   *structs.Model
+	htmlDir string
 )
 
 func init() {
 	debug = true
 	model = &structs.Model{make(map[string]interface{})}
+	htmlDir = config.Get("html.dir")
 }
 
 //func home(w http.ResponseWriter, r *http.Request) {
@@ -44,18 +43,22 @@ func init() {
 //}
 
 func Article(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 	method := r.Method
 	if method == GET {
-		tag := vars["tag"]
-		en_name := vars["en_name"]
-
-		result, err := database.GetArticle(tag, en_name)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		js, _ := json.Marshal(result)
-		w.Write(js)
+		//		result, err := database.GetArticle(vars["tag"], vars["en_name"])
+		//		if err != nil {
+		//			http.Error(w, err.Error(), http.StatusNotFound)
+		//			return
+		//		}
+		//		js, _ := json.Marshal(result)
+		//		w.Write(js)
+		//		h, err := ioutil.ReadFile(htmlDir + "/article.html")
+		//		if err != nil {
+		//			http.Error(w, err.Error(), http.StatusNotFound)
+		//			return
+		//		}
+		//		w.Write(h)
+		htmlFile := htmlDir + "/article.html"
+		http.ServeFile(w, r, htmlFile)
 	}
 }

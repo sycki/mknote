@@ -13,6 +13,7 @@ type config struct {
 }
 
 func (c *config) addDefault(k string, v string) {
+	println("add default configuration", k, "=>", v)
 	c.conf[k] = v
 }
 
@@ -54,25 +55,24 @@ func NewConfig() *config {
 	workDir := filepath.Dir(self)
 	conf.addDefault("MKNOTE_HOME", workDir)
 
-	// setting up default log file
-	sep := string(os.PathSeparator)
-	logFile := workDir + sep + "log" + sep + "mknote.log"
-	conf.addDefault("log.file", logFile)
+	// setting up to default
+	conf.addDefault("log.file", workDir+"/log/mknote.log")
+	conf.addDefault("articles.dir", workDir+"/articles")
+	conf.addDefault("html.dir", workDir+"/static/template")
+	conf.addDefault("article.default.author", "sycki")
 
 	// load config file, exit the program if config file not exists
-	file, err := os.OpenFile("config/mknote.conf", os.O_RDONLY, 0666)
+	file, err := os.OpenFile(workDir+"/conf/mknote.conf", os.O_RDONLY, 0666)
 	defer file.Close()
 	if err != nil {
 		panic(err)
 	}
 
-	in := bufio.NewReader(file)
-	for {
-		line, err := in.ReadString('\n')
-		if err != nil {
-			break
-		}
-		kv := regexp.MustCompilePOSIX("\\s+").Split(line, 2)
+	scan := bufio.NewScanner(file)
+	r := regexp.MustCompile(`[ \t]+`)
+	for scan.Scan() {
+		line := scan.Text()
+		kv := r.Split(line, 2)
 		if len(kv) < 2 || strings.HasPrefix(kv[0], "#") {
 			continue
 		}

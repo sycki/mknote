@@ -4,7 +4,8 @@ bin/
 *.exe~
 *.orig
 .*.swp
-sycki
+*.log
+mknote
 _*/
 
 # Eclipse files

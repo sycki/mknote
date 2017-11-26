@@ -2,7 +2,6 @@ package database
 
 import (
 	"bufio"
-	"errors"
 	"html/template"
 	"io/ioutil"
 	"mknote/config"
@@ -10,14 +9,18 @@ import (
 	"mknote/structs"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 var (
 	Templates map[string]*template.Template
+	artDir    string
 )
 
 func init() {
 	Templates = make(map[string]*template.Template)
+	artDir = config.Get("articles.dir")
 	log.Info("init database complete.")
 }
 
@@ -30,7 +33,6 @@ func init() {
 ]
 */
 func GetTags() ([]*structs.ArticleTag, error) {
-	artDir := config.Get("MKNOTE_HOME") + "/articles"
 	subDirInfos, _ := ioutil.ReadDir(artDir)
 	tagArr := []*structs.ArticleTag{}
 	for _, subDirInfo := range subDirInfos {
@@ -49,25 +51,67 @@ func GetTags() ([]*structs.ArticleTag, error) {
 	return tagArr, nil
 }
 
-func GetArticle(tag string, en_name string) (*structs.Article, error) {
-	artPath := config.Get("MKNOTE_HOME") + "/articles" + "/" + tag + "/" + en_name + ".md"
-	//	artFile,e := os.OpenFile(artPath, os.O_RDONLY, 0666)
-	//	defer artFile.Close()
-	//	if e != nil {
-	//		return nil, e
-	//	}
+var l sync.Mutex
+
+func UpdateMetadata(art *structs.Article) (*structs.Article, error) {
+	artID := art.ID
+	artFile := artDir + artID + ".md"
+	fileStr, e := ioutil.ReadFile(artFile)
+	if e != nil {
+		log.Error("failed update article meta data:", e)
+		return nil, e
+	}
+
+	// Divide the article into two parts: body text and metadata
+	s := strings.Split(string(fileStr), "\n关于\n---\n")
+	art.Content = s[0]
+	return UpdateArtcile(art)
+}
+
+func UpdateArtcile(art *structs.Article) (*structs.Article, error) {
+	artID := art.ID
+	artFile := artDir + artID + ".md"
+	artStr := art.Content
+	artStr += "\n关于\n---\n"
+	artStr += "\n__作者__：" + art.Author + "\n"
+	artStr += "\n__阅读__：" + strconv.Itoa(art.Viewer_count) + "\n"
+	artStr += "\n__点赞__：" + strconv.Itoa(art.Like_count) + "\n"
+	artStr += "\n__创建__：" + art.Create_date + "\n"
+
+	l.Lock()
+	defer l.Unlock()
+	err := ioutil.WriteFile(artFile, []byte(artStr), 0666)
+
+	return art, err
+}
+
+func GetArticle(artID string) (*structs.Article, error) {
+	artFile := artDir + artID + ".md"
+
+	// load article file data
+	fileStr, e := ioutil.ReadFile(artFile)
+	if e != nil {
+		log.Error("failed get aritcle:", e)
+		return nil, e
+	}
+
 	var (
 		content, author, create_date string
 		like_count, viewer_count     int
 	)
-	fileStr, e := ioutil.ReadFile(artPath)
-	if e != nil {
-		return nil, e
-	}
 
+	// Divide the article into two parts: body text and metadata
 	s := strings.Split(string(fileStr), "\n关于\n---\n")
+
+	//这里不用加锁，因为短时间内不会加增浏览数和点赞数，即执行多次写操作也不会有所影响
 	if len(s) < 2 {
-		return nil, errors.New("Error article file is found, but not found metadata.")
+		return UpdateMetadata(&structs.Article{
+			ID:           artID,
+			Author:       config.Get("article.default.author"),
+			Viewer_count: 0,
+			Like_count:   0,
+			Create_date:  time.Now().Format("2017-01-02"),
+		})
 	}
 
 	content = s[0]

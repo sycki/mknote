@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"mknote/database"
 	"mknote/log"
-	"mknote/structs"
 	"net/http"
-
-	"github.com/gorilla/mux"
+	"sync"
 )
 
 const (
@@ -18,21 +16,13 @@ const (
 )
 
 var (
-	debug bool
-	model *structs.Model
+	l sync.Mutex
 )
-
-func init() {
-	debug = true
-	model = &structs.Model{make(map[string]interface{})}
-}
 
 func noAuth(w http.ResponseWriter, r *http.Request) (no bool) {
 	no = true
-	if debug {
-		return false
-	}
-	if header := r.Header.Get("x-requested-by"); header != "sycki" {
+	if header := r.Header.Get("x-requested-by"); header != "mknote" {
+		log.Info("api request authenticate not pass:", header, r.URL)
 		http.Error(w, "authenticate not pass", http.StatusNotFound)
 		return
 	}
@@ -61,11 +51,10 @@ func Article(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	key := vars["key"]
 	method := r.Method
+	uri := r.URL.Path[len("/api/v1/articles"):]
 	if method == GET {
-		articleTag, err := database.GetArticle(key, ".")
+		articleTag, err := database.GetArticle(uri)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -73,5 +62,37 @@ func Article(w http.ResponseWriter, r *http.Request) {
 		}
 		result, _ := json.Marshal(articleTag)
 		w.Write(result)
+	} else if method == POST {
+		articleTag, err := database.GetArticle(uri)
+		if err != nil {
+			log.Error(err)
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		result, _ := json.Marshal(articleTag)
+		w.Write(result)
+	}
+}
+
+func Like(w http.ResponseWriter, r *http.Request) {
+	if noAuth(w, r) {
+		return
+	}
+
+	method := r.Method
+	artID := r.URL.Path[len("/api/v1/like"):]
+
+	if method == PUT {
+		l.Lock()
+		defer l.Unlock()
+		art, err := database.GetArticle(artID)
+		if err != nil {
+			log.Error("failed get old like number for article:", err)
+			return
+		}
+		art.Like_count += 1
+		if _, err2 := database.UpdateArtcile(art); err != nil {
+			log.Error("failed write new like number for article:", err2)
+		}
 	}
 }

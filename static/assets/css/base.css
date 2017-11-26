@@ -263,7 +263,7 @@ article.a-post:target{
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../image/like.svg);
+    background-image:url(../icon/like.svg);
 
 }
 
@@ -273,7 +273,7 @@ article.a-post:target{
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../image/dislike.svg);
+    background-image:url(../icon/dislike.svg);
 
 }
 
@@ -297,7 +297,7 @@ article.a-post:target{
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../image/eyes.svg);
+    background-image:url(../icon/eyes.svg);
 
 }
 

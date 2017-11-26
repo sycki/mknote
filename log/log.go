@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 const (
@@ -50,29 +51,41 @@ func init() {
 	g = log.New(out, "", log.LstdFlags)
 }
 
-func format(pre string, info interface{}) string {
+func format(pre string, info ...interface{}) string {
 	_, file, line, _ := runtime.Caller(2)
 	file = filepath.Base(file)
-	return fmt.Sprintf("%v %v:%v %v", pre, file, line, info)
+	return fmt.Sprintf("%v %v:%v %v", pre, file, line, strings.Trim(fmt.Sprint(info), "[]"))
 }
 
-func Debug(info interface{}) {
+func Debug(info ...interface{}) {
+	if info == nil {
+		return
+	}
 	g.Println(format(DEBUG, info))
 }
 
-func Info(info interface{}) {
+func Info(info ...interface{}) {
+	if info == nil {
+		return
+	}
 	g.Println(format(INFO, info))
 }
 
-func Warn(info interface{}) {
+func Warn(info ...interface{}) {
+	if info == nil {
+		return
+	}
 	g.Println(format(WARN, info))
 }
 
-func Error(info interface{}) {
+func Error(info ...interface{}) {
+	if info == nil {
+		return
+	}
 	g.Println(format(ERROR, info))
 }
 
-func Fatal(info interface{}) {
+func Fatal(info ...interface{}) {
 	g.Println(format(FATAL, info))
 	os.Exit(13)
 }
