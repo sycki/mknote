@@ -5,5 +5,5 @@ package structs
 //articles表示属于该tag的文章名
 type ArticleTag struct {
 	Name     string
-	Articles []string
+	Articles []*Article
 }

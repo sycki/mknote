@@ -7,6 +7,7 @@ import (
 	"mknote/config"
 	"mknote/log"
 	"mknote/structs"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,13 +25,28 @@ func init() {
 	log.Info("init database complete.")
 }
 
+func GetTitle(uri string) (r string, e error) {
+	file, err := os.OpenFile(artDir+uri+".md", os.O_RDONLY, 0666)
+	defer file.Close()
+	if err != nil {
+		log.Error("failed occur while get article title:", uri)
+		return "", err
+	}
+	scan := bufio.NewScanner(file)
+	for scan.Scan() {
+		line := scan.Text()
+		if strings.HasPrefix(line, "# ") {
+			r = line[2:]
+			break
+		}
+	}
+	return
+}
+
 /*
 构造一个首页文章导航json
-[
-	{tag1:[art1,art2,...]},
-	{tag2:[art3,art4,...]},
-	...
-]
+[{"Name":"mknote","Articles":["README.md"]}]
+[{"Name":"linux","Articles":[{"ID":"/linux/linux-code1","Title":"mknote","En_name":"","Content":"","Author":"","Like_count":0,"Viewer_count":0,"Create_date":""},{"ID":"/linux/linux-code2","Title":"Linux 管道","En_name":"","Content":"","Author":"","Like_count":0,"Viewer_count":0,"Create_date":""}]},{"Name":"mknote","Articles":[{"ID":"/mknote/README","Title":"mknote","En_name":"","Content":"","Author":"","Like_count":0,"Viewer_count":0,"Create_date":""}]}]
 */
 func GetTags() ([]*structs.ArticleTag, error) {
 	subDirInfos, _ := ioutil.ReadDir(artDir)
@@ -39,9 +55,12 @@ func GetTags() ([]*structs.ArticleTag, error) {
 		if subDirInfo.IsDir() {
 			subDir := subDirInfo.Name()
 			artInfos, _ := ioutil.ReadDir(artDir + "/" + subDir)
-			artArr := []string{}
+			artArr := []*structs.Article{}
 			for _, artInfo := range artInfos {
-				artArr = append(artArr, artInfo.Name())
+				id := "/" + subDir + "/" + artInfo.Name()[:strings.LastIndex(artInfo.Name(), ".")]
+				title, _ := GetTitle(id)
+				art := &structs.Article{ID: id, Title: title}
+				artArr = append(artArr, art)
 			}
 			tag := &structs.ArticleTag{subDir, artArr}
 			tagArr = append(tagArr, tag)
@@ -147,6 +166,7 @@ func GetArticle(artID string) (*structs.Article, error) {
 	}
 
 	return &structs.Article{
+		ID:           artID,
 		Content:      content,
 		Author:       author,
 		Viewer_count: viewer_count,
@@ -155,6 +175,44 @@ func GetArticle(artID string) (*structs.Article, error) {
 	}, nil
 }
 
-//func GetArticle(articleName string) (resutl string, err error) {
-
-//}
+func GetLatestArticleID() (string, error) {
+	subDirs, err := ioutil.ReadDir(artDir)
+	if err != nil {
+		log.Error("Failed get latest article:", err)
+		return "", err
+	}
+	var latestArt os.FileInfo
+	var latestArtDir string
+	for _, subDir := range subDirs {
+		if subDir.IsDir() {
+			arts, e1 := ioutil.ReadDir(artDir + "/" + subDir.Name())
+			if e1 != nil {
+				log.Error("Failed get latest article:", e1)
+				return "", e1
+			}
+			for _, art := range arts {
+				if latestArt == nil {
+					latestArt = art
+					latestArtDir = subDir.Name()
+					continue
+				}
+				if art.ModTime().After(latestArt.ModTime()) {
+					latestArt = art
+					latestArtDir = subDir.Name()
+				}
+			}
+		} else {
+			if latestArt == nil {
+				latestArt = subDir
+				latestArtDir = subDir.Name()
+				continue
+			}
+			if subDir.ModTime().After(latestArt.ModTime()) {
+				latestArt = subDir
+				latestArtDir = "."
+			}
+		}
+	}
+	latestArtUri := "/" + latestArtDir + "/" + latestArt.Name()[:strings.LastIndex(latestArt.Name(), ".")]
+	return latestArtUri, nil
+}

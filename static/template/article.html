@@ -35,41 +35,39 @@ var article_id = "[[${article.id}]]";
 		<a href="/"><li><span>主页</span></li></a>
 		<a href="/"><li><span>博客</span></li></a>
 		<a href="/"><li><span>关于作者</span></li></a>
-		<a href="/copyright"><li><span>版权声明</span></li></a>
+		<a href="/articles/mknote/copyright"><li><span>版权声明</span></li></a>
 	</ul>
 </nav>
 
+<button onclick="but_menu()" id="but_menu">></button>
 <section id="sections" class="article-menu">
+<div>
+<span>所有文章</span>
+</div>
 <hr>
+<ul>
+	<template v-for="tag in tags">
+		<a href="javascript:void(0)" :onclick="'click_tag(\''+tag.Name+'\')'">
+			<li><i class="cli_close" :id="'cli_'+tag.Name"></i><i class="dir"></i>{{tag.Name}}</li>
+		</a>
+		<ul :id="'list_'+tag.Name" style="display:none;">
+			<a v-for="art in tag.Articles" :href="'/articles'+art.ID">
+				<li><i class="file"></i>{{art.Title}}</li>
+			</a>
+		</ul>
+	</template>
+</ul>
+
 </section>
 
 <article id="article" class="markdown-body">
-# 文章标题
-正文部分@;*&!@#$"' x
-## 标题h2
-### 标题三
-> hello
-
-	" 2 > 1"
-
-```
-var a = "world";
-cat <<-EOF
-hello!
-now time is `date`
-EOF
-if (a > b & a >c);
-	return;
-
-```
-<h2>is h2</h2>
--End-
+<p>加载中</p>
 </article>
 <div id="desc" class="markdown-body">
 	<hr/>
 	<div class="state-line">
-		<button id="but_{{art.ID}}" onclick="article_like('{{art.ID}}')">
-			<i class="thumb-up"></i><span id="value_{{art.ID}}">{{art.Like_count}}</span>
+		<button :id="'but_'+art.ID" :onclick="'article_like(\''+art.ID+'\')'">
+			<i class="thumb-up"></i><span :id="'value_'+art.ID">{{art.Like_count}}</span>
 		</button>
 
 		<button >
@@ -83,9 +81,9 @@ if (a > b & a >c);
 <br>
 
 
-<foote class="markdown-body">
+<footer class="markdown-body">
 <h2></h2>
-<p>© Copyright 2017 张佳军的个人主页 版权所有</p>
+<p>Copyright © 2017 sycki</p>
 </footer>
 
 <br>

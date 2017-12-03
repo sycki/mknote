@@ -17,6 +17,11 @@ func (c *config) addDefault(k string, v string) {
 	c.conf[k] = v
 }
 
+func (c *config) loadConfig(k string, v string) {
+	println("load configuration", k, "=>", v)
+	c.conf[k] = v
+}
+
 func Set(k string, v string) {
 	c.conf[k] = v
 }
@@ -76,7 +81,7 @@ func NewConfig() *config {
 		if len(kv) < 2 || strings.HasPrefix(kv[0], "#") {
 			continue
 		}
-		conf.addDefault(kv[0], kv[1])
+		conf.loadConfig(kv[0], kv[1])
 	}
 	return conf
 }

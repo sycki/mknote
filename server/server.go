@@ -39,15 +39,19 @@ func f(h http.HandlerFunc) http.HandlerFunc {
 
 func StartServer() {
 	log.Info("load handlers...")
-
-	//	m := mux.NewRouter()
 	m := http.NewServeMux()
-	m.HandleFunc("/assets/", f(static))
+
+	// page
+	m.HandleFunc("/", f(blog.Home))
 	m.HandleFunc("/articles/", f(blog.Article))
+
+	// restful API
 	m.HandleFunc("/api/v1/articles/", f(rest.Article))
-	m.HandleFunc("/api/v1/like/", f(rest.Article))
+	m.HandleFunc("/api/v1/like/", f(rest.Like))
 	m.HandleFunc("/api/v1/index", f(rest.Index))
-	//	http.Handle("/", m)
+
+	// static resource
+	m.HandleFunc("/assets/", f(static))
 
 	h := &http.Server{Addr: ":80", Handler: m}
 
