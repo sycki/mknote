@@ -65,6 +65,8 @@ func NewConfig() *config {
 	conf.addDefault("articles.dir", workDir+"/articles")
 	conf.addDefault("html.dir", workDir+"/static/template")
 	conf.addDefault("article.default.author", "sycki")
+	conf.addDefault("server.tls.cert.file", workDir+"/conf/cert.pem")
+	conf.addDefault("server.tls.key.file", workDir+"/conf/privkey.pem")
 
 	// load config file, exit the program if config file not exists
 	file, err := os.OpenFile(workDir+"/conf/mknote.conf", os.O_RDONLY, 0666)

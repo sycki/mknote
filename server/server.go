@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"mknote/config"
 	"mknote/log"
 	"mknote/server/blog"
 	"mknote/server/rest"
@@ -53,12 +54,41 @@ func StartServer() {
 	// static resource
 	m.HandleFunc("/assets/", f(static))
 
-	h := &http.Server{Addr: ":80", Handler: m}
+	var isTls = true
+	tlsCert := config.Get("server.tls.cert.file")
+	tlsKey := config.Get("server.tls.key.file")
 
-	log.Info("start mknode server...")
-	go func() {
-		log.Fatal(h.ListenAndServe())
-	}()
+	// test tls files is exists.
+	f1, e1 := os.OpenFile(tlsCert, os.O_RDONLY, 0666)
+	if e1 != nil {
+		log.Warn("failed try open cert file", tlsCert, e1)
+		isTls = false
+	} else {
+		f1.Close()
+	}
+	f2, e2 := os.OpenFile(tlsKey, os.O_RDONLY, 0666)
+	if e2 != nil {
+		log.Warn("failed try open key file", tlsKey, e2)
+		isTls = false
+	} else {
+		f2.Close()
+	}
+
+	var h *http.Server
+
+	if isTls {
+		log.Info("start server with https")
+		h = &http.Server{Addr: ":443", Handler: m}
+		go func() {
+			log.Fatal(h.ListenAndServeTLS(tlsCert, tlsKey))
+		}()
+	} else {
+		go func() {
+			log.Info("start server with http")
+			h = &http.Server{Addr: ":80", Handler: m}
+			log.Fatal(h.ListenAndServe())
+		}()
+	}
 	log.Info("mknode started")
 
 	sigs := make(chan os.Signal, 1)
