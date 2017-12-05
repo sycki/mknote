@@ -38,6 +38,18 @@ func f(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func redirect80(w http.ResponseWriter, req *http.Request) {
+	// remove/add not default ports from req.Host
+	target := "https://" + req.Host + req.URL.Path
+	if len(req.URL.RawQuery) > 0 {
+		target += "?" + req.URL.RawQuery
+	}
+
+	http.Redirect(w, req, target,
+		// see @andreiavrammsd comment: often 307 > 301
+		http.StatusTemporaryRedirect)
+}
+
 func StartServer() {
 	log.Info("load handlers...")
 	m := http.NewServeMux()
@@ -80,13 +92,15 @@ func StartServer() {
 		log.Info("start server with https")
 		h = &http.Server{Addr: ":443", Handler: m}
 		go func() {
-			log.Fatal(h.ListenAndServeTLS(tlsCert, tlsKey))
+			log.Info(h.ListenAndServeTLS(tlsCert, tlsKey))
 		}()
+
+		go http.ListenAndServe(":80", http.HandlerFunc(redirect80))
 	} else {
 		go func() {
 			log.Info("start server with http")
 			h = &http.Server{Addr: ":80", Handler: m}
-			log.Fatal(h.ListenAndServe())
+			log.Info(h.ListenAndServe())
 		}()
 	}
 	log.Info("mknode started")
