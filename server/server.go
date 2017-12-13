@@ -2,23 +2,17 @@ package server
 
 import (
 	"context"
-	"mknote/config"
-	"mknote/log"
-	"mknote/server/blog"
-	"mknote/server/rest"
+	"mknote/server/controller/blog"
+	"mknote/server/controller/rest"
+	"mknote/server/ctx"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
-const (
-	assDir = "static"
-)
+var staticDir = ctx.Get("static.dir")
 
 func static(w http.ResponseWriter, r *http.Request) {
-	file := assDir + r.URL.Path
+	file := staticDir + r.URL.Path
 	//	if  strings.Contains(file, "..") {
 	//		log.Error(errInfo, file)
 	//		http.NotFound(w, r)
@@ -27,10 +21,11 @@ func static(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, file)
 }
 
-func f(h http.HandlerFunc) http.HandlerFunc {
+func s(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err, ok := recover().(error); ok {
+				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 		}()
@@ -38,85 +33,99 @@ func f(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func redirect80(w http.ResponseWriter, req *http.Request) {
-	// remove/add not default ports from req.Host
-	target := "https://" + req.Host + req.URL.Path
-	if len(req.URL.RawQuery) > 0 {
-		target += "?" + req.URL.RawQuery
+func f(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx.Info(r.RemoteAddr, "=>", r.RequestURI, r.UserAgent())
+		defer func() {
+			if err, ok := recover().(error); ok {
+				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, r.UserAgent(), err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}()
+		h(w, r)
+	}
+}
+
+func redirect80(w http.ResponseWriter, r *http.Request) {
+	target := "https://" + r.Host + r.URL.Path
+	if len(r.URL.RawQuery) > 0 {
+		target += "?" + r.URL.RawQuery
 	}
 
-	http.Redirect(w, req, target,
+	http.Redirect(w, r, target,
 		// see @andreiavrammsd comment: often 307 > 301
 		http.StatusTemporaryRedirect)
 }
 
-func StartServer() {
-	log.Info("load handlers...")
-	m := http.NewServeMux()
+func buildMux() *http.ServeMux {
+	ctx.Info("load handlers...")
+	mux := http.NewServeMux()
 
 	// page
-	m.HandleFunc("/", f(blog.Home))
-	m.HandleFunc("/articles/", f(blog.Article))
+	mux.HandleFunc("/", f(blog.Home))
+	mux.HandleFunc("/articles/", f(blog.Article))
 
 	// restful API
-	m.HandleFunc("/api/v1/articles/", f(rest.Article))
-	m.HandleFunc("/api/v1/like/", f(rest.Like))
-	m.HandleFunc("/api/v1/index", f(rest.Index))
+	mux.HandleFunc("/api/v1/articles/", f(rest.Article))
+	mux.HandleFunc("/api/v1/index", f(rest.Index))
+	mux.HandleFunc("/api/v1/like/", f(rest.Like))
+	mux.HandleFunc("/api/v1/visit/", f(rest.Visit))
 
 	// static resource
-	m.HandleFunc("/assets/", f(static))
+	mux.HandleFunc("/assets/", s(static))
 
-	var isTls = true
-	tlsCert := config.Get("server.tls.cert.file")
-	tlsKey := config.Get("server.tls.key.file")
+	return mux
+}
 
-	// test tls files is exists.
-	f1, e1 := os.OpenFile(tlsCert, os.O_RDONLY, 0666)
-	if e1 != nil {
-		log.Warn("failed try open cert file", tlsCert, e1)
-		isTls = false
-	} else {
-		f1.Close()
-	}
-	f2, e2 := os.OpenFile(tlsKey, os.O_RDONLY, 0666)
-	if e2 != nil {
-		log.Warn("failed try open key file", tlsKey, e2)
-		isTls = false
-	} else {
-		f2.Close()
-	}
+func Start() {
+	ctx.Info("start server with http")
 
-	var h *http.Server
+	s := &http.Server{Addr: ":80", Handler: buildMux(), ErrorLog: ctx.GetLogger()}
+	go s.ListenAndServe()
 
-	if isTls {
-		log.Info("start server with https")
-		h = &http.Server{Addr: ":443", Handler: m}
-		go func() {
-			log.Info(h.ListenAndServeTLS(tlsCert, tlsKey))
-		}()
+	ctx.Info("mknode started")
 
-		go http.ListenAndServe(":80", http.HandlerFunc(redirect80))
-	} else {
-		go func() {
-			log.Info("start server with http")
-			h = &http.Server{Addr: ":80", Handler: m}
-			log.Info(h.ListenAndServe())
-		}()
-	}
-	log.Info("mknode started")
+	stop := make(chan string, 1)
+	ctx.RegistryStoper(stop)
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+	close(stop)
+	ctx.Info("server read stop")
 
-	sig := <-sigs
-	log.Warn("recived signal:", sig)
+	c, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	s.Shutdown(c)
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	err := h.Shutdown(ctx)
-	if err != nil {
-		log.Warn(err)
-	}
+	//wait other hook execut complete
+	time.Sleep(1 * time.Second)
 
-	log.Info("mknode gracefully stopped")
-	println("mknode gracefully stopped")
+	ctx.Info("server gracefully stopped")
+}
+
+func StartTLS() {
+	ctx.Info("start server with tls")
+
+	s := &http.Server{Addr: ":443", Handler: buildMux(), ErrorLog: ctx.GetLogger()}
+	go s.ListenAndServeTLS(ctx.Get("server.tls.cert.file"), ctx.Get("server.tls.key.file"))
+
+	ctx.Info("redirect 80 to 443")
+	s80 := &http.Server{Addr: ":80", Handler: http.HandlerFunc(redirect80), ErrorLog: ctx.GetLogger()}
+	go s80.ListenAndServe()
+
+	ctx.Info("mknode started")
+
+	stop := make(chan string, 1)
+	ctx.RegistryStoper(stop)
+
+	<-stop
+	ctx.Info("serverTLS read stop")
+
+	close(stop)
+	c, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	s.Shutdown(c)
+	s80.Shutdown(c)
+
+	//wait other hook execut complete
+	time.Sleep(1 * time.Second)
+
+	ctx.Info("server gracefully stopped")
 }

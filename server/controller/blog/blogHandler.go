@@ -1,9 +1,9 @@
 package blog
 
 import (
-	"mknote/config"
-	"mknote/database"
-	"mknote/structs"
+	"mknote/server/ctx"
+	"mknote/server/persistent"
+	"mknote/server/persistent/structs"
 	"net/http"
 )
 
@@ -21,13 +21,13 @@ var (
 
 func init() {
 	model = &structs.Model{make(map[string]interface{})}
-	htmlDir = config.Get("html.dir")
+	htmlDir = ctx.Get("html.dir")
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	if method == GET {
-		artID, err := database.GetLatestArticleID()
+		artID, err := persistent.GetLatestArticleID()
 		if err != nil {
 			http.NotFound(w, r)
 		} else {

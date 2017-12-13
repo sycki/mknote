@@ -1,9 +1,8 @@
-package log
+package ctx
 
 import (
 	"fmt"
 	"log"
-	"mknote/config"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,11 +10,11 @@ import (
 )
 
 const (
-	DEBUG = "DEBUG"
-	INFO  = "INFO"
-	WARN  = "WARN"
-	ERROR = "ERROR"
-	FATAL = "FATAL"
+	debug  = "DEBUG"
+	info   = "INFO"
+	warn   = "WARN"
+	errors = "ERROR"
+	fatal  = "FATAL"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 )
 
 func init() {
-	logFile := config.Get("log.file")
+	logFile := Get("log.file")
 	logPath := filepath.Dir(logFile)
 
 	// create all parent directory if not exists
@@ -51,42 +50,46 @@ func init() {
 	g = log.New(out, "", log.LstdFlags)
 }
 
+func GetLogger() *log.Logger {
+	return g
+}
+
 func format(pre string, info ...interface{}) string {
 	_, file, line, _ := runtime.Caller(2)
 	file = filepath.Base(file)
 	return fmt.Sprintf("%v %v:%v %v", pre, file, line, strings.Trim(fmt.Sprint(info), "[]"))
 }
 
-func Debug(info ...interface{}) {
-	if info == nil {
+func Debug(megs ...interface{}) {
+	if megs == nil {
 		return
 	}
-	g.Println(format(DEBUG, info))
+	g.Println(format(debug, megs))
 }
 
-func Info(info ...interface{}) {
-	if info == nil {
+func Info(megs ...interface{}) {
+	if megs == nil {
 		return
 	}
-	g.Println(format(INFO, info))
+	g.Println(format(info, megs))
 }
 
-func Warn(info ...interface{}) {
-	if info == nil {
+func Warn(megs ...interface{}) {
+	if megs == nil {
 		return
 	}
-	g.Println(format(WARN, info))
+	g.Println(format(warn, megs))
 }
 
-func Error(info ...interface{}) {
-	if info == nil {
+func Error(megs ...interface{}) {
+	if megs == nil {
 		return
 	}
-	g.Println(format(ERROR, info))
+	g.Println(format(errors, megs))
 }
 
-func Fatal(info ...interface{}) {
-	g.Println(format(FATAL, info))
+func Fatal(megs ...interface{}) {
+	g.Println(format(fatal, megs))
 	os.Exit(13)
 }
 

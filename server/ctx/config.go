@@ -1,4 +1,4 @@
-package config
+package ctx
 
 import (
 	"bufio"
@@ -22,36 +22,11 @@ func (c *config) loadConfig(k string, v string) {
 	c.conf[k] = v
 }
 
-func Set(k string, v string) {
-	c.conf[k] = v
-}
-
-func Get(k string) string {
-	v, _ := c.conf[k]
-	return v
-}
-
-func GetOr(k string, d string) string {
-	v, ok := c.conf[k]
-	if ok {
-		return v
-	} else {
-		return d
-	}
-}
-
 var (
 	c *config
 )
 
 func init() {
-	c = NewConfig()
-}
-
-// must exists keys:
-// MKNOTE_HOME
-// log.file
-func NewConfig() *config {
 	// create config object and load default properties
 	conf := &config{make(map[string]string)}
 
@@ -63,10 +38,11 @@ func NewConfig() *config {
 	// setting up to default
 	conf.addDefault("log.file", workDir+"/log/mknote.log")
 	conf.addDefault("articles.dir", workDir+"/articles")
+	conf.addDefault("static.dir", workDir+"/static")
 	conf.addDefault("html.dir", workDir+"/static/template")
-	conf.addDefault("article.default.author", "sycki")
-	conf.addDefault("server.tls.cert.file", workDir+"/conf/cert.pem")
+	conf.addDefault("server.tls.cert.file", workDir+"/conf/fullchain.pem")
 	conf.addDefault("server.tls.key.file", workDir+"/conf/privkey.pem")
+	conf.addDefault("article.default.author", "sycki")
 
 	// load config file, exit the program if config file not exists
 	file, err := os.OpenFile(workDir+"/conf/mknote.conf", os.O_RDONLY, 0666)
@@ -85,5 +61,24 @@ func NewConfig() *config {
 		}
 		conf.loadConfig(kv[0], kv[1])
 	}
-	return conf
+
+	c = conf
+}
+
+func Set(k string, v string) {
+	c.conf[k] = v
+}
+
+func Get(k string) string {
+	v, _ := c.conf[k]
+	return v
+}
+
+func GetOr(k string, d string) string {
+	v, ok := c.conf[k]
+	if ok {
+		return v
+	} else {
+		return d
+	}
 }

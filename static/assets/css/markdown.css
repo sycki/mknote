@@ -2,6 +2,7 @@
     box-sizing: border-box;
     min-width: 300px;
     max-width: 900px;
+    min-height: 100px;
     margin: 0 auto;
     /*margin: 0px 60px 0px auto;*/
     padding: 45px;

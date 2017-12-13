@@ -63,7 +63,7 @@ function article_like(artID){
 		return
 	}
 	
-	apitor("PUT","/api/v1/like" + artID, function(){
+	apitor("POST","/api/v1/like" + artID, function(){
         if (core.readyState==4 && core.status==200){
             up.style.backgroundColor=already;
             up_value.innerHTML = parseInt(up_value.innerHTML)+1;
@@ -85,6 +85,10 @@ function parser_article(){
 			});
 	    }
 	});
+}
+
+function visit(){
+	apitor("POST", "/api/v1/visit" + window.location.pathname, function(){});
 }
 
 function generate_index(){
@@ -135,5 +139,6 @@ var core = new XMLHttpRequest();
 
 window.onload=function(){
     parser_article("article");
-	setTimeout("generate_index()",1000);
+	setTimeout("visit()",50000);
+	setTimeout("generate_index()",2000);
 }
