@@ -1,4 +1,9 @@
-# mknote
+# Marknote
+mknote is a simple and quick blogging system, No database, No login required, Only standerd documents are needed.
+
+## Documents
+* [中文文档](https://github.com/sycki/mknote/README-CH.md)
+* [English doc](https://github.com/sycki/mknote)
 
 ## Development guide
 ### Clone source code
@@ -37,7 +42,7 @@ tar -xf mknote-v2.2.tar -C /usr/local/mknote/
 ```
 
 ### Run with TLS
-Copy yarn cert and key file by options `--tls-cert` and `--tls-key`, If you want start it with TLS mode.
+Specify your cert and key file by options `--tls-cert` and `--tls-key`, If you want start it with TLS mode.
 ```
 /usr/local/sycki-mknote/mknote \
 --tls-cert /etc/ssl/cert.pem \
@@ -59,8 +64,6 @@ cp scenery.png /usr/local/mknote/uploads/
 
 After then refrence they in your articles.
 ```
-cat articles/mknote/README.md
-# mknote
 ![scenery](/uploads/scenery.png)
 ```
 

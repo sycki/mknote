@@ -1,5 +1,7 @@
 # generated files where run in local machine
 bin/
+articles/
+uploads/
 *.exe
 *.exe~
 *.orig
