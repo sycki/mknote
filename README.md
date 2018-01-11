@@ -1,7 +1,68 @@
 # mknote
 
-## Usage
-1. install go and set system env `GOROOT` `GOPATH`
-1. `go intall github.com/sycki/mknote.git`
-1. `$GOPATH/bin/mknote`
-1. copy your *.md files to directory `$GOPATH/src/mknote/articles`
+## Development guide
+### Clone source code
+You can fork the project first, Also can direct clone it.
+```
+cd $GOPATH/src
+git clone https://github.com/sycki/mknote.git
+```
+
+### Development
+Import the project to your IDE, Edition it.
+
+### Build and run
+```
+cd $GOPATH/src/mknote
+go build -v mknote
+sudo ./mknote
+```
+
+## Usage guide
+### Download
+Download latest binary tarball at release page.
+```
+https://github.com/sycki/mknote/releases
+```
+
+### Uncompress
+```
+mkdir /usr/local/mknote/
+tar -xf mknote-v2.2.tar -C /usr/local/mknote/
+```
+
+### Run
+```
+/usr/local/sycki-mknote/mknote &
+```
+
+### Run with TLS
+Copy yarn cert and key file by options `--tls-cert` and `--tls-key`, If you want start it with TLS mode.
+```
+/usr/local/sycki-mknote/mknote \
+--tls-cert /etc/ssl/cert.pem \
+--tls-key /etc/ssl/key.pem &
+```
+
+### Add articles
+Copy your *.md files to `/usr/local/mknote/articles/`, You can create subdirectory in `articles`, And at most 1 level.
+```
+cd /usr/local/mknote/
+mkdir articles/mknote
+echo "# mknote" > articles/mknote/README.md
+```
+
+Copy your images to `/usr/local/mknote/uploads/`.
+```
+cp scenery.png /usr/local/mknote/uploads/
+```
+
+After then refrence they in your articles.
+```
+cat articles/mknote/README.md
+# mknote
+![scenery](/uploads/scenery.png)
+```
+
+### Visit
+Visit `localhost` in your browser.

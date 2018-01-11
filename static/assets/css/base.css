@@ -102,12 +102,10 @@ nav li:hover {
     transition: all 0.5s ease;
 }
 
-/*
-    nav ul{
-	    float:left;
-    }
-*/
 @media (max-width: 725px) {
+	nav {
+		padding:0;
+	}
     nav>p {
         display:none;
     }
@@ -232,13 +230,6 @@ nav li:hover {
 .article-menu a:visited {
     color:#555;
     text-decoration: none;
-}
-
-/* 屏幕太小时隐藏 */
-@media (max-width: 1200px) {
-    .article-menu {
-        left:-500px;
-    }
 }
 
 /* =====结束定义文章章节点导航块===== */

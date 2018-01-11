@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/howeyc/fsnotify"
@@ -20,6 +19,7 @@ const (
 )
 
 var (
+	//文章文件所在路径
 	artDir string
 	//网站首页缓存
 	latestArticle *structs.Article
@@ -29,7 +29,7 @@ var (
 )
 
 func init() {
-	artDir = ctx.Get("articles.dir")
+	artDir = ctx.Config.ArticlesDir
 	go fsmonitor()
 	ctx.Info("initialize data base complete")
 }
@@ -38,17 +38,21 @@ func init() {
 func fsmonitor() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		ctx.Fatal(err)
+		ctx.Fatal("fsnotify.NewWatcher():", err)
 	}
 
 	sigs := make(chan string, 1)
 	ctx.RegistryStoper(sigs)
 
-	//var flags uint32 = syscall.IN_CREATE | syscall.IN_DELETE | syscall.IN_MOVE
-	var flags uint32 = syscall.IN_ALL_EVENTS
+	if err := os.MkdirAll(artDir, 0666); err != nil {
+		ctx.Fatal(err)
+	}
+
+	//var flags uint32 = syscall.IN_ALL_EVENTS | syscall.IN_CREATE | syscall.IN_DELETE | syscall.IN_MOVE
+	var flags uint32 = 0xfff
 	err = watcher.AddWatch(artDir, flags)
 	if err != nil {
-		ctx.Fatal(err)
+		ctx.Fatal(artDir, err)
 	}
 
 	//将根文章目录下的所有子目录加入到监听列表
@@ -63,7 +67,7 @@ func fsmonitor() {
 			ctx.Info("fsmonitor read sigs:", sig)
 			break
 		case ev := <-watcher.Event:
-			//如果根文章目录下创建了新子目录，则加入监听列表，反之删除
+			//如果根文章目录下创建了新子目录，则加入监听列表，反之从监听列表中删除
 			if ev.IsCreate() {
 				if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
 					ctx.Info("fsmonitor add watch:", ev.Name)
@@ -82,7 +86,7 @@ func fsmonitor() {
 			} else {
 				continue
 			}
-			ctx.Info("fsmonitor read event:", ev.String())
+			ctx.Info("update cache from fsmonitor event:", ev.String())
 			latestIndex = nil
 			latestArticle = nil
 		case err := <-watcher.Error:
@@ -96,7 +100,7 @@ func fsmonitor() {
 }
 
 func GetTitle(uri string) (r string, e error) {
-	file, err := os.OpenFile(artDir+uri+".md", os.O_RDONLY, 0666)
+	file, err := os.OpenFile(artDir+"/"+uri+".md", os.O_RDONLY, 0666)
 	defer file.Close()
 	if err != nil {
 		ctx.Error("failed occur while get article title:", uri)
@@ -132,7 +136,7 @@ func GetTags() ([]*structs.ArticleTag, error) {
 			for _, artInfo := range artInfos {
 				id := "/" + subDir + "/" + artInfo.Name()[:strings.LastIndex(artInfo.Name(), ".")]
 				title, _ := GetTitle(id)
-				art := &structs.Article{ID: id, Title: title}
+				art := &structs.Article{Id: id, Title: title}
 				artArr = append(artArr, art)
 			}
 			tag := &structs.ArticleTag{subDir, artArr}
@@ -145,7 +149,7 @@ func GetTags() ([]*structs.ArticleTag, error) {
 }
 
 func UpdateMetadata(art *structs.Article) (*structs.Article, error) {
-	artFile := artDir + art.ID + ".md"
+	artFile := artDir + "/" + art.Id + ".md"
 	fileStr, e := ioutil.ReadFile(artFile)
 	if e != nil {
 		ctx.Error("failed update article meta data:", e)
@@ -159,7 +163,7 @@ func UpdateMetadata(art *structs.Article) (*structs.Article, error) {
 }
 
 func UpdateArtcile(art *structs.Article) (*structs.Article, error) {
-	artFile := artDir + art.ID + ".md"
+	artFile := artDir + "/" + art.Id + ".md"
 	artStr := art.Content
 	artStr += "\n关于\n---\n"
 	artStr += "\n__作者__：" + art.Author + "\n"
@@ -172,18 +176,18 @@ func UpdateArtcile(art *structs.Article) (*structs.Article, error) {
 	err := ioutil.WriteFile(artFile, []byte(artStr), 0666)
 
 	//如果本次更新的文章是缓存中的文章，则更新缓存
-	if err != nil && latestArticle != nil && latestArticle.ID == art.ID {
+	if err == nil && latestArticle != nil && latestArticle.Id == art.Id {
 		latestArticle = art
 	}
 	return art, err
 }
 
 func GetArticle(artID string) (*structs.Article, error) {
-	if latestArticle != nil && artID == latestArticle.ID {
+	if latestArticle != nil && artID == latestArticle.Id {
 		return latestArticle, nil
 	}
 
-	artFile := artDir + artID + ".md"
+	artFile := artDir + "/" + artID + ".md"
 
 	// load article file data
 	fileStr, e := ioutil.ReadFile(artFile)
@@ -193,8 +197,8 @@ func GetArticle(artID string) (*structs.Article, error) {
 	}
 
 	var (
-		content, author, create_date string
-		like_count, viewer_count     int
+		content, author, create_date, title string
+		like_count, viewer_count            int
 	)
 
 	// Divide the article into two parts: body text and metadata
@@ -204,18 +208,27 @@ func GetArticle(artID string) (*structs.Article, error) {
 	if len(s) < 2 {
 		f, _ := os.Stat(artFile)
 		return UpdateMetadata(&structs.Article{
-			ID:           artID,
-			Author:       ctx.Get("article.default.author"),
+			Id:           artID,
+			Author:       ctx.Config.ArticleAuthor,
 			Viewer_count: 0,
 			Like_count:   0,
 			Create_date:  f.ModTime().Format(artTimeFormat),
 		})
 	}
 
+	scan := bufio.NewScanner(strings.NewReader(s[0]))
+	for scan.Scan() {
+		line := scan.Text()
+		if strings.HasPrefix(line, "# ") {
+			title = line[2:]
+			break
+		}
+	}
+
 	content = s[0]
 
 	// read remain string by line
-	scan := bufio.NewScanner(strings.NewReader(s[1]))
+	scan = bufio.NewScanner(strings.NewReader(s[1]))
 	for scan.Scan() {
 		line := scan.Text()
 		kv := strings.Split(line, "：")
@@ -245,7 +258,8 @@ func GetArticle(artID string) (*structs.Article, error) {
 	}
 
 	return &structs.Article{
-		ID:           artID,
+		Id:           artID,
+		Title:        title,
 		Content:      content,
 		Author:       author,
 		Viewer_count: viewer_count,
@@ -256,7 +270,7 @@ func GetArticle(artID string) (*structs.Article, error) {
 
 func GetLatestArticleID() (string, error) {
 	if latestArticle != nil {
-		return latestArticle.ID, nil
+		return latestArticle.Id, nil
 	}
 
 	subDirs, err := ioutil.ReadDir(artDir)
@@ -306,5 +320,5 @@ func GetLatestArticleID() (string, error) {
 	}
 
 	latestArticle = latestArt
-	return latestArt.ID, nil
+	return latestArt.Id, nil
 }

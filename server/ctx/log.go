@@ -18,12 +18,13 @@ const (
 )
 
 var (
-	g   *log.Logger
-	out *os.File
+	level int
+	g     *log.Logger
 )
 
 func init() {
-	logFile := Get("log.file")
+	level = Config.LogLevel
+	logFile := Config.LogFile
 	logPath := filepath.Dir(logFile)
 
 	// create all parent directory if not exists
@@ -36,14 +37,14 @@ func init() {
 	}
 
 	// open log file handle and create log file if not exists
-	out, err = os.OpenFile(logFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	out, err1 := os.OpenFile(logFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 
 	// postpone action to main method execut finish of the close handler
 	// if not call close hook, the file handler will be gc recycle
 	//	defer out.Close()
 
-	if err != nil {
-		panic(err)
+	if err1 != nil {
+		panic(err1)
 	}
 
 	log.Println("log to:", logFile)
@@ -54,51 +55,42 @@ func GetLogger() *log.Logger {
 	return g
 }
 
-func format(pre string, info ...interface{}) string {
+func format(pre string, megs ...interface{}) string {
+	if megs == nil {
+		return ""
+	}
 	_, file, line, _ := runtime.Caller(2)
 	file = filepath.Base(file)
-	return fmt.Sprintf("%v %v:%v %v", pre, file, line, strings.Trim(fmt.Sprint(info), "[]"))
+	return fmt.Sprintf("%v %v:%v %v\n", pre, file, line, strings.Trim(fmt.Sprint(megs), "[]"))
 }
 
 func Debug(megs ...interface{}) {
-	if megs == nil {
-		return
+	if level <= 0 {
+		g.Print(format(debug, megs))
 	}
-	g.Println(format(debug, megs))
 }
 
 func Info(megs ...interface{}) {
-	if megs == nil {
-		return
+	if level <= 1 {
+		g.Print(format(info, megs))
 	}
-	g.Println(format(info, megs))
 }
 
 func Warn(megs ...interface{}) {
-	if megs == nil {
-		return
+	if level <= 2 {
+		g.Print(format(warn, megs))
 	}
-	g.Println(format(warn, megs))
 }
 
 func Error(megs ...interface{}) {
-	if megs == nil {
-		return
+	if level <= 3 {
+		g.Print(format(errors, megs))
 	}
-	g.Println(format(errors, megs))
 }
 
 func Fatal(megs ...interface{}) {
-	g.Println(format(fatal, megs))
-	os.Exit(13)
+	if level <= 4 {
+		g.Print(format(fatal, megs))
+		os.Exit(13)
+	}
 }
-
-//func Close() {
-//	Info("call logger shutting down hook")
-//	if f, ok := out.(*os.File); ok {
-//		out.Sync()
-//		out.Close()
-//	} else if f, ok := out.(io.Closer); ok {
-//		f.Close()
-//	}
-//}

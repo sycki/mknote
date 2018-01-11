@@ -4,13 +4,14 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"mknote/server/ctx"
 	"net/http"
 	"path"
 	"strings"
 )
 
-const (
-	TEMPL_DIR = "static/template"
+var (
+	TEMPL_DIR = ctx.Config.HtmlDir
 	SUFFIX    = ".html"
 )
 
@@ -38,13 +39,14 @@ func check(err error) {
 	}
 }
 
-func RenderHTML(w http.ResponseWriter, templ string, model map[string]interface{}) {
-	err := templates[templ].Execute(w, model)
+func RendHTML(w http.ResponseWriter, templ string, model *map[string]interface{}) {
+	err := templates[templ].Execute(w, *model)
 	check(err)
 }
 
 func SendHTML(w http.ResponseWriter, templ string) {
-	htmlFile, err := ioutil.ReadFile(templ + "/" + SUFFIX)
+	fileName := TEMPL_DIR + "/" + templ + "/" + SUFFIX
+	htmlFile, err := ioutil.ReadFile(fileName)
 	io.WriteString(w, string(htmlFile))
 	check(err)
 }

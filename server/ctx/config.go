@@ -1,84 +1,70 @@
 package ctx
 
 import (
-	"bufio"
+	"flag"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
+)
+
+var (
+	version = "mknote-v2.2"
+	Config  *config
 )
 
 type config struct {
-	conf map[string]string
+	HomeDir       string
+	LogFile       string
+	LogLevel      int
+	ArticlesDir   string
+	UploadsDir    string
+	StaticDir     string
+	HtmlDir       string
+	TlsCertFile   string
+	TlsKeyFile    string
+	ArticleAuthor string
 }
-
-func (c *config) addDefault(k string, v string) {
-	println("add default configuration", k, "=>", v)
-	c.conf[k] = v
-}
-
-func (c *config) loadConfig(k string, v string) {
-	println("load configuration", k, "=>", v)
-	c.conf[k] = v
-}
-
-var (
-	c *config
-)
 
 func init() {
-	// create config object and load default properties
-	conf := &config{make(map[string]string)}
-
 	// setting up default work location
 	self, _ := filepath.Abs(os.Args[0])
 	workDir := filepath.Dir(self)
-	conf.addDefault("MKNOTE_HOME", workDir)
 
-	// setting up to default
-	conf.addDefault("log.file", workDir+"/log/mknote.log")
-	conf.addDefault("articles.dir", workDir+"/articles")
-	conf.addDefault("static.dir", workDir+"/static")
-	conf.addDefault("html.dir", workDir+"/static/template")
-	conf.addDefault("server.tls.cert.file", workDir+"/conf/fullchain.pem")
-	conf.addDefault("server.tls.key.file", workDir+"/conf/privkey.pem")
-	conf.addDefault("article.default.author", "sycki")
-
-	// load config file, exit the program if config file not exists
-	file, err := os.OpenFile(workDir+"/conf/mknote.conf", os.O_RDONLY, 0666)
-	defer file.Close()
-	if err != nil {
-		panic(err)
+	Config = &config{
+		workDir,
+		workDir + "/log/mknote.log",
+		1,
+		workDir + "/articles",
+		workDir + "/uploads",
+		workDir + "/static",
+		workDir + "/static/template",
+		workDir + "/conf/fullchain.pem",
+		workDir + "/conf/privkey.pem",
+		"sycki",
 	}
 
-	scan := bufio.NewScanner(file)
-	r := regexp.MustCompile(`[ \t]+`)
-	for scan.Scan() {
-		line := scan.Text()
-		kv := r.Split(line, 2)
-		if len(kv) < 2 || strings.HasPrefix(kv[0], "#") {
-			continue
+	for _, arg := range os.Args {
+		if arg == "--version" {
+			println(version)
+			os.Exit(0)
 		}
-		conf.loadConfig(kv[0], kv[1])
 	}
 
-	c = conf
-}
+	flag.StringVar(&Config.LogFile, "log-file", Config.LogFile, "set log output file")
+	flag.IntVar(&Config.LogLevel, "log-level", Config.LogLevel, "set log output level, 0...4")
+	flag.StringVar(&Config.ArticlesDir, "articles-dir", Config.ArticlesDir, "markdown files dir")
+	flag.StringVar(&Config.UploadsDir, "uploads-dir", Config.UploadsDir, "refence images files dir of all articles")
+	flag.StringVar(&Config.StaticDir, "static-dir", Config.StaticDir, "css js etc.")
+	flag.StringVar(&Config.HtmlDir, "html-dir", Config.HtmlDir, "html template dir")
+	flag.StringVar(&Config.TlsCertFile, "tls-cert", Config.TlsCertFile, "server cert file for https")
+	flag.StringVar(&Config.TlsKeyFile, "tls-key", Config.TlsKeyFile, "server key file for https")
+	flag.StringVar(&Config.ArticleAuthor, "author", Config.ArticleAuthor, "generate author name for article metadata")
 
-func Set(k string, v string) {
-	c.conf[k] = v
-}
+	flag.Parse()
 
-func Get(k string) string {
-	v, _ := c.conf[k]
-	return v
-}
-
-func GetOr(k string, d string) string {
-	v, ok := c.conf[k]
-	if ok {
-		return v
-	} else {
-		return d
+	for _, arg := range os.Args {
+		if arg == "--help" {
+			os.Exit(0)
+		}
 	}
+
 }

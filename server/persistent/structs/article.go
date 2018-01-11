@@ -17,7 +17,7 @@ type ArticleFull struct {
 }
 
 type Article struct {
-	ID           string
+	Id           string
 	Title        string
 	En_name      string
 	Content      string

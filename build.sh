@@ -1,20 +1,25 @@
 #!/bin/bash
 
-cd `dirname $0`
+set -e
 
-target_dir=$1
-
-if [ -z $target_dir ] || [ "${target_dir:0:1}" != "/" ]; then
-  echo "请指定mknote安装目录，以/开头，如：/usr/local/mknote"
-  exit 11
-fi
+target_dir="_output"
 
 go build mknote || {
-  echo "编译失败！exit code $?"
-  exit 13
+  code=$?
+  echo "failed build, exit code: $code"
+  exit $code
 }
 
-[ -d $target_dir ] || mkdir $target_dir
+version=`./mknote --version 2>&1` || {
+  code=$?
+  echo "failed get version, exit code: $code"
+  exit $code
+}
 
-/bin/cp -rf mknote conf articles static  $target_dir/
+if [ -d $target_dir ]; then
+  rm -rf "$target_dir/$version.tar"
+else
+  mkdir $target_dir
+fi
 
+tar -cf "$target_dir/$version.tar" mknote static/

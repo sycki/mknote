@@ -2,14 +2,22 @@ package server
 
 import (
 	"context"
-	"mknote/server/controller/blog"
+	"mknote/server/controller/page"
 	"mknote/server/controller/rest"
 	"mknote/server/ctx"
 	"net/http"
 	"time"
 )
 
-var staticDir = ctx.Get("static.dir")
+var (
+	staticDir  = ctx.Config.StaticDir
+	uploadsDir = ctx.Config.UploadsDir
+)
+
+func upload(w http.ResponseWriter, r *http.Request) {
+	file := uploadsDir + "/" + r.URL.Path[len("/uploads/"):]
+	http.ServeFile(w, r, file)
+}
 
 func static(w http.ResponseWriter, r *http.Request) {
 	file := staticDir + r.URL.Path
@@ -21,25 +29,43 @@ func static(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, file)
 }
 
-func s(h http.HandlerFunc) http.HandlerFunc {
+func securityStaticHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			if err, ok := recover().(error); ok {
+			if err := recover(); err != nil {
 				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "406", http.StatusInternalServerError)
 			}
 		}()
 		h(w, r)
 	}
 }
 
-func f(h http.HandlerFunc) http.HandlerFunc {
+func securityRest(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx.Info(r.RemoteAddr, "=>", r.RequestURI, r.UserAgent())
+		ctx.Info(r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
+		if header := r.Header.Get("x-requested-by"); header != "mknote" {
+			ctx.Error(r.RemoteAddr, "=>", r.RequestURI, "unauthorized:", header, r.URL)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 		defer func() {
-			if err, ok := recover().(error); ok {
-				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, r.UserAgent(), err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err := recover(); err != nil {
+				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				http.Error(w, "500", http.StatusInternalServerError)
+			}
+		}()
+		h(w, r)
+	}
+}
+
+func securityHandler(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx.Info(r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
+		defer func() {
+			if err := recover(); err != nil {
+				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
 		h(w, r)
@@ -61,18 +87,19 @@ func buildMux() *http.ServeMux {
 	ctx.Info("load handlers...")
 	mux := http.NewServeMux()
 
-	// page
-	mux.HandleFunc("/", f(blog.Home))
-	mux.HandleFunc("/articles/", f(blog.Article))
+	// page handler
+	mux.HandleFunc("/", securityHandler(page.Home))
+	mux.HandleFunc("/articles/", securityHandler(page.Article))
+	mux.HandleFunc("/uploads/", securityStaticHandler(upload))
 
 	// restful API
-	mux.HandleFunc("/api/v1/articles/", f(rest.Article))
-	mux.HandleFunc("/api/v1/index", f(rest.Index))
-	mux.HandleFunc("/api/v1/like/", f(rest.Like))
-	mux.HandleFunc("/api/v1/visit/", f(rest.Visit))
+	mux.HandleFunc("/api/v1/index", securityRest(rest.Index))
+	mux.HandleFunc("/api/v1/articles/", securityRest(rest.Article))
+	mux.HandleFunc("/api/v1/visit/articles/", securityRest(rest.Visit))
+	mux.HandleFunc("/api/v1/like/", securityRest(rest.Like))
 
 	// static resource
-	mux.HandleFunc("/assets/", s(static))
+	mux.HandleFunc("/assets/", securityStaticHandler(static))
 
 	return mux
 }
@@ -105,7 +132,7 @@ func StartTLS() {
 	ctx.Info("start server with tls")
 
 	s := &http.Server{Addr: ":443", Handler: buildMux(), ErrorLog: ctx.GetLogger()}
-	go s.ListenAndServeTLS(ctx.Get("server.tls.cert.file"), ctx.Get("server.tls.key.file"))
+	go s.ListenAndServeTLS(ctx.Config.TlsCertFile, ctx.Config.TlsKeyFile)
 
 	ctx.Info("redirect 80 to 443")
 	s80 := &http.Server{Addr: ":80", Handler: http.HandlerFunc(redirect80), ErrorLog: ctx.GetLogger()}
