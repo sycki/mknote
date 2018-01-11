@@ -2,7 +2,7 @@
 mknote is a simple and quick blogging system, No database, No login required, Only standerd documents are needed.
 
 ## Documents
-* [中文文档](https://github.com/sycki/mknote/README-CH.md)
+* [中文文档](https://github.com/sycki/mknote/blob/master/README-CH.md)
 * [English doc](https://github.com/sycki/mknote)
 
 ## Development guide

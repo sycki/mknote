@@ -2,7 +2,7 @@
 mknote是一个简单快速的博客系统，没有数据库，也无需登录，只需指定你的Markdown文件所在的目录，mknote将自动发现它们，并生成页面。
 
 ## 文档
-* [中文文档](https://github.com/sycki/mknote/README-CH.md)
+* [中文文档](https://github.com/sycki/mknote/blob/master/README-CH.md)
 * [English doc](https://github.com/sycki/mknote)
 
 ## 开发指南
