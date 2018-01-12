@@ -26,9 +26,7 @@ sudo ./mknote
 ## 使用指南
 ### 下载
 你可以直接去发布页面下载已经编译好的二进制程序。
-```
-https://github.com/sycki/mknote/releases
-```
+[https://github.com/sycki/mknote/releases](https://github.com/sycki/mknote/releases)
 
 ### 安装
 ```
@@ -69,3 +67,8 @@ cp scenery.png /usr/local/mknote/uploads/
 
 ### 访问
 现在可以在你的浏览器中打开`localhost`。
+
+## 引用
+https://github.com/howeyc/fsnotify
+https://github.com/russross/blackfriday
+https://github.com/sindresorhus/github-markdown-css

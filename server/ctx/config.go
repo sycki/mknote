@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	version = "mknote-v2.2.2"
+	version = "mknote-v2.2.3"
 	Config  *config
 )
 

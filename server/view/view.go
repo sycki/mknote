@@ -53,7 +53,7 @@ func check(err error) {
 }
 
 func RendHTML(w http.ResponseWriter, templ string, model *map[string]interface{}) {
-	err := templates[templ].Execute(w, *model)
+	err := templates[templ].Execute(w, model)
 	check(err)
 }
 

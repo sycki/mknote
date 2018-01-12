@@ -129,7 +129,7 @@ var core = new XMLHttpRequest();
 
 
 window.onload=function(){
-    parser_article();
+    //parser_article();
 	setTimeout("visit()",50000);
 	//setTimeout("generate_index()",2000);
 }

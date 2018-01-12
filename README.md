@@ -26,9 +26,7 @@ sudo ./mknote
 ## Usage guide
 ### Download
 Download latest binary tarball at release page.
-```
-https://github.com/sycki/mknote/releases
-```
+[https://github.com/sycki/mknote/releases](https://github.com/sycki/mknote/releases)
 
 ### Uncompress
 ```
@@ -69,3 +67,8 @@ After then refrence they in your articles.
 
 ### Visit
 Visit `localhost` in your browser.
+
+## Refrence
+https://github.com/howeyc/fsnotify
+https://github.com/russross/blackfriday
+https://github.com/sindresorhus/github-markdown-css

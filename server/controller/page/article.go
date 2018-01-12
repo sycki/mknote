@@ -14,9 +14,11 @@ limitations under the License.
 package page
 
 import (
+	"html/template"
 	"mknote/server/persistent"
 	"mknote/server/view"
 	"net/http"
+	"github.com/russross/blackfriday.v2"
 )
 
 const (
@@ -47,10 +49,14 @@ func Article(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
+		articleHTML := template.HTML(string(blackfriday.Run([]byte(article.Content))))
+		article.Content = ""
+
 		articleIndex, err := persistent.GetTags()
 		model := &map[string]interface{}{
-			"article": article,
-			"index":   articleIndex,
+			"articleHTML": articleHTML,
+			"article":     article,
+			"index":       articleIndex,
 		}
 		view.RendHTML(w, "article", model)
 	}

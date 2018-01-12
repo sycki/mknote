@@ -24,8 +24,6 @@
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="/assets/css/markdown.css">
-
-	<script>var art_str = "{{$.article.Content}}"</script>
 </head>
 <body>
 
@@ -61,7 +59,7 @@
 </section>
 
 <article id="article" class="markdown-body">
-<div class="loader">加载中</div>
+{{$.articleHTML}}
 </article>
 <div id="desc" class="markdown-body">
 	<hr/>
