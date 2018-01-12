@@ -72,12 +72,6 @@ function article_like(artID){
     });
 }
 
-function parser_article(){
-	if(art_str != ''){
-		document.getElementById("article").innerHTML = marked(art_str);
-	}
-}
-
 function visit(){
 	apitor("POST", "/api/v1/visit" + window.location.pathname, function(){});
 }
@@ -129,7 +123,5 @@ var core = new XMLHttpRequest();
 
 
 window.onload=function(){
-    //parser_article();
 	setTimeout("visit()",50000);
-	//setTimeout("generate_index()",2000);
 }
