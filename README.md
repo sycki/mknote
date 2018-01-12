@@ -69,6 +69,6 @@ After then refrence they in your articles.
 Visit `localhost` in your browser.
 
 ## Refrence
-https://github.com/howeyc/fsnotify
-https://github.com/russross/blackfriday
-https://github.com/sindresorhus/github-markdown-css
+* https://github.com/howeyc/fsnotify
+* https://github.com/russross/blackfriday
+* https://github.com/sindresorhus/github-markdown-css

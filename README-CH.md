@@ -69,6 +69,6 @@ cp scenery.png /usr/local/mknote/uploads/
 现在可以在你的浏览器中打开`localhost`。
 
 ## 引用
-https://github.com/howeyc/fsnotify
-https://github.com/russross/blackfriday
-https://github.com/sindresorhus/github-markdown-css
+* https://github.com/howeyc/fsnotify
+* https://github.com/russross/blackfriday
+* https://github.com/sindresorhus/github-markdown-css
