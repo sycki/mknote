@@ -20,11 +20,12 @@ import (
 )
 
 var (
-	version = "mknote-v2.2.3"
+	version = "mknote-v2.2.4"
 	Config  *config
 )
 
 type config struct {
+	HostName      string
 	HomeDir       string
 	LogFile       string
 	LogLevel      int
@@ -43,6 +44,7 @@ func init() {
 	workDir := filepath.Dir(self)
 
 	Config = &config{
+		"",
 		workDir,
 		workDir + "/log/mknote.log",
 		1,
@@ -62,6 +64,7 @@ func init() {
 		}
 	}
 
+	flag.StringVar(&Config.HostName, "hostname", Config.HostName, "binding hostname")
 	flag.StringVar(&Config.LogFile, "log-file", Config.LogFile, "set log output file")
 	flag.IntVar(&Config.LogLevel, "log-level", Config.LogLevel, "set log output level, 0...4")
 	flag.StringVar(&Config.ArticlesDir, "articles-dir", Config.ArticlesDir, "markdown files dir")

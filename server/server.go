@@ -15,7 +15,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"mknote/server/controller/page"
 	"mknote/server/controller/rest"
 	"mknote/server/ctx"
@@ -75,11 +74,10 @@ func securityRest(h http.HandlerFunc) http.HandlerFunc {
 
 func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		visitEntry := fmt.Sprint(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
-		ctx.Info(visitEntry)
+		ctx.Info(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
 		defer func() {
 			if err := recover(); err != nil {
-				ctx.Error(visitEntry, err)
+				ctx.Error(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"]", err)
 				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
@@ -88,7 +86,11 @@ func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func redirect80(w http.ResponseWriter, r *http.Request) {
-	target := "https://" + r.Host + r.URL.Path
+	hostname := ctx.Config.HostName
+	if hostname == "" {
+		hostname = r.Host
+	}
+	target := "https://" + hostname + r.URL.Path
 	if len(r.URL.RawQuery) > 0 {
 		target += "?" + r.URL.RawQuery
 	}
