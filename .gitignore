@@ -7,7 +7,6 @@ uploads/
 *.orig
 .*.swp
 *.log
-mknote
 _*/
 
 # Eclipse files

@@ -115,6 +115,7 @@ func Start(conf *options.Config, c context.Context) {
 
 	<-c.Done()
 	s.Shutdown(c)
+	logger.Info("server gracefully stopped")
 }
 
 func StartTLS(conf *options.Config, c context.Context) {
@@ -132,4 +133,5 @@ func StartTLS(conf *options.Config, c context.Context) {
 	<-c.Done()
 	s.Shutdown(c)
 	s80.Shutdown(c)
+	logger.Info("server gracefully stopped")
 }
