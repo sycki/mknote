@@ -15,8 +15,8 @@ package page
 
 import (
 	"html/template"
-	"mknote/server/persistent"
-	"mknote/server/view"
+	"github.com/sycki/mknote/server/persistent"
+	"github.com/sycki/mknote/server/view"
 	"net/http"
 	"github.com/russross/blackfriday.v2"
 )

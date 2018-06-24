@@ -133,7 +133,7 @@ func (w *Watcher) Close() error {
 
 // AddWatch adds path to the watched file set.
 // The flags are interpreted as described in kevent(2).
-func (w *Watcher) addWatch(path string, flags uint32) error {
+func (w *Watcher) AddWatch(path string, flags uint32) error {
 	w.mu.Lock()
 	if w.isClosed {
 		w.mu.Unlock()
@@ -231,7 +231,7 @@ func (w *Watcher) watch(path string) error {
 	w.ewmut.Lock()
 	w.externalWatches[path] = true
 	w.ewmut.Unlock()
-	return w.addWatch(path, sys_NOTE_ALLEVENTS)
+	return w.AddWatch(path, sys_NOTE_ALLEVENTS)
 }
 
 // RemoveWatch removes path from the watched file set.
@@ -426,7 +426,7 @@ func (w *Watcher) watchDirectoryFiles(dirPath string) error {
 
 		if fileInfo.IsDir() == false {
 			// Watch file to mimic linux fsnotify
-			e := w.addWatch(filePath, sys_NOTE_ALLEVENTS)
+			e := w.AddWatch(filePath, sys_NOTE_ALLEVENTS)
 			if e != nil {
 				return e
 			}
@@ -442,7 +442,7 @@ func (w *Watcher) watchDirectoryFiles(dirPath string) error {
 			}
 
 			// Linux gives deletes if not explicitly watching
-			e := w.addWatch(filePath, newFlags)
+			e := w.AddWatch(filePath, newFlags)
 			if e != nil {
 				return e
 			}

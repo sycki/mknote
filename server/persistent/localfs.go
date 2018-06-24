@@ -15,9 +15,9 @@ package persistent
 
 import (
 	"bufio"
+	"github.com/sycki/mknote/logger"
+	"github.com/sycki/mknote/server/persistent/structs"
 	"io/ioutil"
-	"mknote/server/ctx"
-	"mknote/server/persistent/structs"
 	"os"
 	"strconv"
 	"strings"
@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/howeyc/fsnotify"
+	"context"
+	"github.com/sycki/mknote/cmd/mknote/options"
 )
 
 const (
@@ -32,6 +34,7 @@ const (
 )
 
 var (
+	config *options.Config
 	//文章文件所在路径
 	artDir string
 	//网站首页缓存
@@ -41,31 +44,25 @@ var (
 	l           = &sync.Mutex{}
 )
 
-func init() {
-	artDir = ctx.Config.ArticlesDir
-	go fsmonitor()
-	ctx.Info("initialize data base complete")
-}
-
 // 监听本地文件系统是否有新的文章，以更新缓存
-func fsmonitor() {
+func Start(conf *options.Config,c context.Context) {
+	config = conf
+	artDir = conf.ArticlesDir
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		ctx.Fatal("fsnotify.NewWatcher():", err)
+		logger.Fatal("fsnotify.NewWatcher():", err)
 	}
 
-	sigs := make(chan string, 1)
-	ctx.RegistryStoper(sigs)
-
 	if err := os.MkdirAll(artDir, 0666); err != nil {
-		ctx.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	//var flags uint32 = syscall.IN_ALL_EVENTS | syscall.IN_CREATE | syscall.IN_DELETE | syscall.IN_MOVE
 	var flags uint32 = 0xfff
 	err = watcher.AddWatch(artDir, flags)
 	if err != nil {
-		ctx.Fatal(artDir, err)
+		logger.Fatal(artDir, err)
 	}
 
 	//将根文章目录下的所有子目录加入到监听列表
@@ -74,41 +71,41 @@ func fsmonitor() {
 		watcher.AddWatch(artDir+"/"+sub.Name(), flags)
 	}
 
+	logger.Info("initialize data base complete: local file system")
+
 	for {
 		select {
-		case sig := <-sigs:
-			ctx.Info("fsmonitor read sigs:", sig)
-			break
+		case <-c.Done():
+			logger.Info("fsmonitor received stop signal")
+			watcher.Close()
+			return
 		case ev := <-watcher.Event:
 			//如果根文章目录下创建了新子目录，则加入监听列表，反之从监听列表中删除
 			if ev.IsCreate() {
 				if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
-					ctx.Info("fsmonitor add watch:", ev.Name)
+					logger.Info("fsmonitor add watch:", ev.Name)
 					watcher.AddWatch(ev.Name, flags)
 				}
 			} else if ev.IsDelete() {
 				if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
-					ctx.Info("fsmonitor del watch:", ev.Name)
+					logger.Info("fsmonitor del watch:", ev.Name)
 					watcher.RemoveWatch(ev.Name)
 				}
 			} else if ev.IsRename() {
 				if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
-					ctx.Info("fsmonitor del watch:", ev.Name)
+					logger.Info("fsmonitor del watch:", ev.Name)
 					watcher.RemoveWatch(ev.Name)
 				}
 			} else {
 				continue
 			}
-			ctx.Info("update cache from fsmonitor event:", ev.String())
+			logger.Info("update cache from fsmonitor event:", ev.String())
 			latestIndex = nil
 			latestArticle = nil
 		case err := <-watcher.Error:
-			ctx.Error("fsmonitor read error:", err)
+			logger.Error("fsmonitor read error:", err)
 		}
 	}
-
-	close(sigs)
-	watcher.Close()
 
 }
 
@@ -116,7 +113,7 @@ func GetTitle(uri string) (r string, e error) {
 	file, err := os.OpenFile(artDir+"/"+uri+".md", os.O_RDONLY, 0666)
 	defer file.Close()
 	if err != nil {
-		ctx.Error("failed occur while get article title:", uri)
+		logger.Error("failed occur while get article title:", uri)
 		return "", err
 	}
 	scan := bufio.NewScanner(file)
@@ -165,7 +162,7 @@ func UpdateMetadata(art *structs.Article) (*structs.Article, error) {
 	artFile := artDir + "/" + art.Id + ".md"
 	fileStr, e := ioutil.ReadFile(artFile)
 	if e != nil {
-		ctx.Error("failed update article meta data:", e)
+		logger.Error("failed update article meta data:", e)
 		return nil, e
 	}
 
@@ -205,7 +202,7 @@ func GetArticle(artID string) (*structs.Article, error) {
 	// load article file data
 	fileStr, e := ioutil.ReadFile(artFile)
 	if e != nil {
-		ctx.Error("failed get aritcle:", e)
+		logger.Error("failed get aritcle:", e)
 		return nil, e
 	}
 
@@ -222,7 +219,7 @@ func GetArticle(artID string) (*structs.Article, error) {
 		f, _ := os.Stat(artFile)
 		return UpdateMetadata(&structs.Article{
 			Id:           artID,
-			Author:       ctx.Config.ArticleAuthor,
+			Author:       config.ArticleAuthor,
 			Viewer_count: 0,
 			Like_count:   0,
 			Create_date:  f.ModTime().Format(artTimeFormat),
@@ -288,7 +285,7 @@ func GetLatestArticleID() (string, error) {
 
 	subDirs, err := ioutil.ReadDir(artDir)
 	if err != nil {
-		ctx.Error("Failed get latest article:", err)
+		logger.Error("Failed get latest article:", err)
 		return "", err
 	}
 	var latestTime time.Time
@@ -299,7 +296,7 @@ func GetLatestArticleID() (string, error) {
 		if subDir.IsDir() {
 			arts, e1 := ioutil.ReadDir(artDir + "/" + subDir.Name())
 			if e1 != nil {
-				ctx.Error("Failed get latest article:", e1)
+				logger.Error("Failed get latest article:", e1)
 				return "", e1
 			}
 			//遍历某子目录下的所有文章
@@ -309,7 +306,7 @@ func GetLatestArticleID() (string, error) {
 				//如果文章内没有元数据或没有时间信息，则使用文件的修改时间代替
 				createTime, err := time.Parse(artTimeFormat, artFile.Create_date)
 				if err != nil {
-					ctx.Error("Failed get article create date:", err)
+					logger.Error("Failed get article create date:", err)
 					createTime = art.ModTime()
 				}
 

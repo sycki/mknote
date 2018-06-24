@@ -14,23 +14,26 @@ limitations under the License.
 package view
 
 import (
+	"github.com/sycki/mknote/cmd/mknote/options"
 	"html/template"
 	"io"
 	"io/ioutil"
-	"mknote/server/ctx"
 	"net/http"
 	"path"
 	"strings"
 )
 
 var (
-	TEMPL_DIR = ctx.Config.HtmlDir
+	config    *options.Config
+	TEMPL_DIR string
 	SUFFIX    = ".html"
+	templates map[string]*template.Template
 )
 
-var templates map[string]*template.Template
+func Init(conf *options.Config) {
+	config = conf
+	TEMPL_DIR = config.HtmlDir
 
-func init() {
 	templates = make(map[string]*template.Template)
 	fileArr, err := ioutil.ReadDir(TEMPL_DIR)
 	check(err)

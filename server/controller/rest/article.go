@@ -15,7 +15,7 @@ package rest
 
 import (
 	"encoding/json"
-	"mknote/server/persistent"
+	"github.com/sycki/mknote/server/persistent"
 	"net/http"
 	"sync"
 )

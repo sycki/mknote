@@ -15,38 +15,22 @@ package server
 
 import (
 	"context"
-	"mknote/server/controller/page"
-	"mknote/server/controller/rest"
-	"mknote/server/ctx"
+	"github.com/sycki/mknote/server/controller/page"
+	"github.com/sycki/mknote/server/controller/rest"
+	"github.com/sycki/mknote/logger"
 	"net/http"
-	"time"
+	"github.com/sycki/mknote/cmd/mknote/options"
 )
 
 var (
-	staticDir  = ctx.Config.StaticDir
-	uploadsDir = ctx.Config.UploadsDir
+	config *options.Config
 )
-
-func upload(w http.ResponseWriter, r *http.Request) {
-	file := uploadsDir + "/" + r.URL.Path[len("/uploads/"):]
-	http.ServeFile(w, r, file)
-}
-
-func static(w http.ResponseWriter, r *http.Request) {
-	file := staticDir + r.URL.Path
-	//	if  strings.Contains(file, "..") {
-	//		log.Error(errInfo, file)
-	//		http.NotFound(w, r)
-	//		return
-	//	}
-	http.ServeFile(w, r, file)
-}
 
 func securityStaticHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				logger.Error(r.RemoteAddr, "=>", r.RequestURI, err)
 				http.Error(w, "406", http.StatusInternalServerError)
 			}
 		}()
@@ -56,15 +40,15 @@ func securityStaticHandler(h http.HandlerFunc) http.HandlerFunc {
 
 func securityRest(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx.Info(r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
+		logger.Info(r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
 		if header := r.Header.Get("x-requested-by"); header != "mknote" {
-			ctx.Error(r.RemoteAddr, "=>", r.RequestURI, "unauthorized:", header, r.URL)
+			logger.Error(r.RemoteAddr, "=>", r.RequestURI, "unauthorized:", header, r.URL)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 		defer func() {
 			if err := recover(); err != nil {
-				ctx.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				logger.Error(r.RemoteAddr, "=>", r.RequestURI, err)
 				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
@@ -74,10 +58,10 @@ func securityRest(h http.HandlerFunc) http.HandlerFunc {
 
 func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx.Info(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
+		logger.Info(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
 		defer func() {
 			if err := recover(); err != nil {
-				ctx.Error(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"]", err)
+				logger.Error(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"]", err)
 				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
@@ -86,7 +70,7 @@ func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func redirect80(w http.ResponseWriter, r *http.Request) {
-	hostname := ctx.Config.HostName
+	hostname := config.HostName
 	if hostname == "" {
 		hostname = r.Host
 	}
@@ -101,13 +85,13 @@ func redirect80(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildMux() *http.ServeMux {
-	ctx.Info("load handlers...")
+	logger.Info("load handlers...")
 	mux := http.NewServeMux()
 
 	// page handler
 	mux.HandleFunc("/", securityHandler(page.Home))
 	mux.HandleFunc("/articles/", securityHandler(page.Article))
-	mux.HandleFunc("/uploads/", securityStaticHandler(upload))
+	mux.HandleFunc("/uploads/", securityStaticHandler(rest.Download))
 
 	// restful API
 	mux.HandleFunc("/api/v1/index", securityRest(rest.Index))
@@ -116,60 +100,36 @@ func buildMux() *http.ServeMux {
 	mux.HandleFunc("/api/v1/like/", securityRest(rest.Like))
 
 	// static resource
-	mux.HandleFunc("/assets/", securityStaticHandler(static))
+	mux.HandleFunc("/assets/", securityStaticHandler(rest.Assets))
 
 	return mux
 }
 
-func Start() {
-	ctx.Info("start server with http")
+func Start(conf *options.Config, c context.Context) {
+	config = conf
+	logger.Info("start server with http")
 
-	s := &http.Server{Addr: ":80", Handler: buildMux(), ErrorLog: ctx.GetLogger()}
+	s := &http.Server{Addr: ":80", Handler: buildMux(), ErrorLog: logger.GetLogger()}
 	go s.ListenAndServe()
+	logger.Info("mknode started")
 
-	ctx.Info("mknode started")
-
-	stop := make(chan string, 1)
-	ctx.RegistryStoper(stop)
-
-	<-stop
-	close(stop)
-	ctx.Info("server read stop")
-
-	c, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	<-c.Done()
 	s.Shutdown(c)
-
-	//wait other hook execut complete
-	time.Sleep(1 * time.Second)
-
-	ctx.Info("server gracefully stopped")
 }
 
-func StartTLS() {
-	ctx.Info("start server with tls")
+func StartTLS(conf *options.Config, c context.Context) {
+	config = conf
+	logger.Info("start server with tls")
 
-	s := &http.Server{Addr: ":443", Handler: buildMux(), ErrorLog: ctx.GetLogger()}
-	go s.ListenAndServeTLS(ctx.Config.TlsCertFile, ctx.Config.TlsKeyFile)
+	s := &http.Server{Addr: ":443", Handler: buildMux(), ErrorLog: logger.GetLogger()}
+	go s.ListenAndServeTLS(config.TlsCertFile, config.TlsKeyFile)
 
-	ctx.Info("redirect 80 to 443")
-	s80 := &http.Server{Addr: ":80", Handler: http.HandlerFunc(redirect80), ErrorLog: ctx.GetLogger()}
+	logger.Info("redirect 80 to 443")
+	s80 := &http.Server{Addr: ":80", Handler: http.HandlerFunc(redirect80), ErrorLog: logger.GetLogger()}
 	go s80.ListenAndServe()
+	logger.Info("mknode started")
 
-	ctx.Info("mknode started")
-
-	stop := make(chan string, 1)
-	ctx.RegistryStoper(stop)
-
-	<-stop
-	ctx.Info("serverTLS read stop")
-
-	close(stop)
-	c, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	<-c.Done()
 	s.Shutdown(c)
 	s80.Shutdown(c)
-
-	//wait other hook execut complete
-	time.Sleep(1 * time.Second)
-
-	ctx.Info("server gracefully stopped")
 }

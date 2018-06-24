@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ctx
+package logger
 
 import (
 	"fmt"
@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"github.com/sycki/mknote/cmd/mknote/options"
 )
 
 const (
@@ -35,9 +36,9 @@ var (
 	g     *log.Logger
 )
 
-func init() {
-	level = Config.LogLevel
-	logFile := Config.LogFile
+func Init(conf *options.Config) {
+	level = conf.LogLevel
+	logFile := conf.LogFile
 	logPath := filepath.Dir(logFile)
 
 	// create all parent directory if not exists
@@ -60,7 +61,7 @@ func init() {
 		panic(err1)
 	}
 
-	log.Println("log to:", logFile)
+	log.Println("for log output to:", logFile)
 	g = log.New(out, "", log.LstdFlags)
 }
 
