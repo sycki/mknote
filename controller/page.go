@@ -11,25 +11,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package page
+package controller
 
 import (
 	"html/template"
-	"github.com/sycki/mknote/server/persistent"
-	"github.com/sycki/mknote/server/view"
 	"net/http"
 	"github.com/russross/blackfriday.v2"
 )
 
-const (
-	get  = "GET"
-	post = "POST"
-)
-
-func Home(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Index(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	if method == get {
-		artID, err := persistent.GetLatestArticleID()
+		artID, err := m.storage.GetLatestArticleID()
 		if err != nil {
 			panic(err)
 		} else {
@@ -38,26 +31,24 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Article(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Home(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	artId := r.URL.Path[len("/articles/"):]
 
 	if method == get {
-		//		htmlFile := htmlDir + "/article.html"
-		//		http.ServeFile(w, r, htmlFile)
-		article, err := persistent.GetArticle(artId)
+		article, err := m.storage.GetArticle(artId)
 		if err != nil {
 			panic(err)
 		}
 		articleHTML := template.HTML(string(blackfriday.Run([]byte(article.Content))))
 		article.Content = ""
 
-		articleIndex, err := persistent.GetTags()
+		articleIndex, err := m.storage.GetTags()
 		model := &map[string]interface{}{
 			"articleHTML": articleHTML,
 			"article":     article,
 			"index":       articleIndex,
 		}
-		view.RendHTML(w, "article", model)
+		m.view.RendHTML(w, "article", model)
 	}
 }

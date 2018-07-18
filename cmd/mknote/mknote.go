@@ -14,24 +14,22 @@ limitations under the License.
 package main
 
 import (
-	"github.com/sycki/mknote/server"
-	"github.com/sycki/mknote/logger"
-	"os"
-	"context"
-	"time"
-	"os/signal"
-	"syscall"
-	"github.com/sycki/mknote/server/persistent"
 	"flag"
 	"github.com/sycki/mknote/cmd/mknote/options"
-	"github.com/sycki/mknote/server/view"
+	"github.com/sycki/mknote/controller"
+	"github.com/sycki/mknote/logger"
+	"github.com/sycki/mknote/server"
+	"github.com/sycki/mknote/storage"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
-var version = "mknote-v2.3.0"
+var version string
 
 func main() {
 	cmd := flag.CommandLine
-	config := options.GetDefaultConfig()
+	config := options.NewDefaultConfig()
 	config.AddFlags(cmd)
 	flag.Parse()
 
@@ -40,40 +38,39 @@ func main() {
 		os.Exit(0)
 	}
 
-	var isTls = true
-	if _, err := os.Stat(config.TlsCertFile); os.IsNotExist(err) {
-		isTls = false
-	}
-	if _, err := os.Stat(config.TlsKeyFile); os.IsNotExist(err) {
-		isTls = false
-	}
+	logger.SetLevel(config.LogLevel)
 
-	// create context
-	c, cancel := context.WithTimeout(context.Background(), time.Second)
+	// create context for all threads
+	errCh := make(chan error, 1)
 
-	// init logger
-	logger.Init(config)
+	// create storage layer manager and start file cache manager
+	sm := storage.NewManager(config)
+	sm.Start(errCh)
+	defer sm.Stop()
 
-	// init view
-	view.Init(config)
-
-	// start fs monitor
-	persistent.Start(config, c)
+	// create controller manager of page and rest api
+	ctr := controller.NewManager(config, sm)
 
 	// start http server
-	if isTls {
-		server.StartTLS(config, c)
-	} else {
-		server.Start(config, c)
+	s := server.NewServer(config, ctr)
+	s.Start(errCh)
+	defer s.Stop()
+
+	logger.Info("mknote is started")
+
+	// start listen system signal
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		logger.Error("occur error when start mknote:", err)
+	case signal := <-sig:
+		logger.Warn("receive a signal:", signal)
 	}
 
-	// start listen stop signal from system
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGKILL, syscall.SIGINT, syscall.SIGTERM)
-
-	<-sig
-	cancel()
+	close(errCh)
 	close(sig)
 
-	logger.Info("mknote gracefully stopped")
+	logger.Info("mknote stopped gracefully")
 }

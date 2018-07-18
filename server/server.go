@@ -15,22 +15,50 @@ package server
 
 import (
 	"context"
-	"github.com/sycki/mknote/server/controller/page"
-	"github.com/sycki/mknote/server/controller/rest"
+	"github.com/sycki/mknote/cmd/mknote/options"
+	"github.com/sycki/mknote/controller"
 	"github.com/sycki/mknote/logger"
 	"net/http"
-	"github.com/sycki/mknote/cmd/mknote/options"
+	"runtime/debug"
+	"fmt"
 )
 
-var (
-	config *options.Config
-)
+type Server struct {
+	mux            *http.ServeMux
+	config         *options.Config
+	httpServer     *http.Server
+	redirectServer *http.Server
+}
+
+func NewServer(config *options.Config, cm *controller.Manager) *Server {
+	mux := http.NewServeMux()
+
+	// page handler
+	mux.HandleFunc("/", securityHandler(cm.Index))
+	mux.HandleFunc("/articles/", securityHandler(cm.Home))
+	mux.HandleFunc("/f/", securityStaticHandler(cm.Download))
+
+	// static resource
+	mux.HandleFunc("/assets/", securityStaticHandler(cm.Assets))
+
+	// restful API
+	mux.HandleFunc("/v1/index", securityRest(cm.ArticleNavigation))
+	mux.HandleFunc("/v1/articles/", securityRest(cm.Article))
+	mux.HandleFunc("/v1/visit/articles/", securityRest(cm.Visit))
+	mux.HandleFunc("/v1/like/", securityRest(cm.Like))
+
+	return &Server{
+		config: config,
+		mux:    mux,
+	}
+}
 
 func securityStaticHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				fmt.Println(err)
+				debug.PrintStack()
 				http.Error(w, "406", http.StatusInternalServerError)
 			}
 		}()
@@ -48,7 +76,8 @@ func securityRest(h http.HandlerFunc) http.HandlerFunc {
 		}
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Error(r.RemoteAddr, "=>", r.RequestURI, err)
+				fmt.Println(err)
+				debug.PrintStack()
 				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
@@ -61,7 +90,8 @@ func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 		logger.Info(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"] ")
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Error(r.Method, r.RemoteAddr, "=>", r.RequestURI, "["+r.UserAgent()+"]", err)
+				fmt.Println(err)
+				debug.PrintStack()
 				http.Error(w, "500", http.StatusInternalServerError)
 			}
 		}()
@@ -69,8 +99,8 @@ func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func redirect80(w http.ResponseWriter, r *http.Request) {
-	hostname := config.HostName
+func (s *Server) redirect80(w http.ResponseWriter, r *http.Request) {
+	hostname := s.config.HostName
 	if hostname == "" {
 		hostname = r.Host
 	}
@@ -84,54 +114,27 @@ func redirect80(w http.ResponseWriter, r *http.Request) {
 		http.StatusTemporaryRedirect)
 }
 
-func buildMux() *http.ServeMux {
-	logger.Info("load handlers...")
-	mux := http.NewServeMux()
+func (s *Server) Start(errCh chan error) {
+	logger.Info("starting server ...")
+	if s.config.IsTls {
+		s.httpServer = &http.Server{Addr: ":443", Handler: s.mux, ErrorLog: logger.GetLogger()}
+		go s.httpServer.ListenAndServeTLS(s.config.TlsCertFile, s.config.TlsKeyFile)
 
-	// page handler
-	mux.HandleFunc("/", securityHandler(page.Home))
-	mux.HandleFunc("/articles/", securityHandler(page.Article))
-	mux.HandleFunc("/uploads/", securityStaticHandler(rest.Download))
-
-	// restful API
-	mux.HandleFunc("/api/v1/index", securityRest(rest.Index))
-	mux.HandleFunc("/api/v1/articles/", securityRest(rest.Article))
-	mux.HandleFunc("/api/v1/visit/articles/", securityRest(rest.Visit))
-	mux.HandleFunc("/api/v1/like/", securityRest(rest.Like))
-
-	// static resource
-	mux.HandleFunc("/assets/", securityStaticHandler(rest.Assets))
-
-	return mux
+		logger.Info("redirect all request to tls from http")
+		s.redirectServer = &http.Server{Addr: ":80", Handler: http.HandlerFunc(s.redirect80), ErrorLog: logger.GetLogger()}
+		go s.redirectServer.ListenAndServe()
+	}else {
+		s.httpServer = &http.Server{Addr: ":80", Handler: s.mux, ErrorLog: logger.GetLogger()}
+		go s.httpServer.ListenAndServe()
+	}
 }
 
-func Start(conf *options.Config, c context.Context) {
-	config = conf
-	logger.Info("start server with http")
-
-	s := &http.Server{Addr: ":80", Handler: buildMux(), ErrorLog: logger.GetLogger()}
-	go s.ListenAndServe()
-	logger.Info("mknode started")
-
-	<-c.Done()
-	s.Shutdown(c)
-	logger.Info("server gracefully stopped")
-}
-
-func StartTLS(conf *options.Config, c context.Context) {
-	config = conf
-	logger.Info("start server with tls")
-
-	s := &http.Server{Addr: ":443", Handler: buildMux(), ErrorLog: logger.GetLogger()}
-	go s.ListenAndServeTLS(config.TlsCertFile, config.TlsKeyFile)
-
-	logger.Info("redirect 80 to 443")
-	s80 := &http.Server{Addr: ":80", Handler: http.HandlerFunc(redirect80), ErrorLog: logger.GetLogger()}
-	go s80.ListenAndServe()
-	logger.Info("mknode started")
-
-	<-c.Done()
-	s.Shutdown(c)
-	s80.Shutdown(c)
-	logger.Info("server gracefully stopped")
+func (s *Server) Stop() {
+	logger.Info("stopping server ...")
+	if s.httpServer != nil {
+		s.httpServer.Shutdown(context.Background())
+	}
+	if s.config.IsTls && s.redirectServer != nil {
+		s.redirectServer.Shutdown(context.Background())
+	}
 }

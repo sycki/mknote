@@ -15,8 +15,8 @@ package options
 
 import (
 	"flag"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
 
 var Instance *Config
@@ -24,31 +24,31 @@ var Instance *Config
 type Config struct {
 	HostName      string
 	HomeDir       string
-	LogFile       string
 	LogLevel      int
 	ArticlesDir   string
 	DownloadDir   string
 	StaticDir     string
 	HtmlDir       string
+	IsTls         bool
 	TlsCertFile   string
 	TlsKeyFile    string
 	ArticleAuthor string
 	Version       bool
 }
 
-func GetDefaultConfig() *Config {
+func NewDefaultConfig() *Config {
 	// setting up default work location
 	self, _ := filepath.Abs(os.Args[0])
 	workDir := filepath.Dir(self)
 	Instance = &Config{
 		"",
 		workDir,
-		workDir + "/log/mknote.log",
 		1,
 		workDir + "/articles",
-		workDir + "/uploads",
+		workDir + "/f",
 		workDir + "/static",
 		workDir + "/static/template",
+		true,
 		workDir + "/conf/fullchain.pem",
 		workDir + "/conf/privkey.pem",
 		"sycki",
@@ -60,12 +60,12 @@ func GetDefaultConfig() *Config {
 
 func (c *Config) AddFlags(cmd *flag.FlagSet) {
 	cmd.StringVar(&c.HostName, "hostname", c.HostName, "binding hostname")
-	cmd.StringVar(&c.LogFile, "log-file", c.LogFile, "set log output file")
 	cmd.IntVar(&c.LogLevel, "log-level", c.LogLevel, "set log output level, 0...4")
 	cmd.StringVar(&c.ArticlesDir, "articles-dir", c.ArticlesDir, "markdown files dir")
 	cmd.StringVar(&c.DownloadDir, "uploads-dir", c.DownloadDir, "refence images files dir of all articles")
-	cmd.StringVar(&c.StaticDir, "static-dir", c.StaticDir, "css js etc.")
+	cmd.StringVar(&c.StaticDir, "static-dir", c.StaticDir, "html css js etc.")
 	cmd.StringVar(&c.HtmlDir, "html-dir", c.HtmlDir, "html template dir")
+	cmd.BoolVar(&c.IsTls, "tls", c.IsTls, "specify model https or http")
 	cmd.StringVar(&c.TlsCertFile, "tls-cert", c.TlsCertFile, "server cert file for https")
 	cmd.StringVar(&c.TlsKeyFile, "tls-key", c.TlsKeyFile, "server key file for https")
 	cmd.StringVar(&c.ArticleAuthor, "author", c.ArticleAuthor, "generate author name for article metadata")

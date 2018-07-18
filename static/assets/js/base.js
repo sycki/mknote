@@ -64,7 +64,7 @@ function article_like(artID){
 		return
 	}
 	
-	apitor("POST","/api/v1/like/" + artID, function(){
+	apitor("POST","/v1/like/" + artID, function(){
         if (core.readyState==4 && core.status==200){
             up.style.backgroundColor=already;
             up_value.innerHTML = parseInt(up_value.innerHTML)+1;
@@ -73,11 +73,11 @@ function article_like(artID){
 }
 
 function visit(){
-	apitor("POST", "/api/v1/visit" + window.location.pathname, function(){});
+	apitor("POST", "/v1/visit" + window.location.pathname, function(){});
 }
 
 //function generate_index(){
-//	apitor("GET", "/api/v1/index", function(){
+//	apitor("GET", "/v1/index", function(){
 //	    if (core.readyState==4 && core.status==200){
 //	        var str = core.responseText;
 //			var json = JSON && JSON.parse(str) || eval('(' + str + ')');

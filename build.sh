@@ -1,25 +1,39 @@
 #!/bin/bash
 
 set -e
-
 target_dir="_output"
+version=$1
+cd `dirname $0`
 
-go build mknote || {
-  code=$?
-  echo "failed build, exit code: $code"
-  exit $code
+usage(){
+    cat <<-EOF
+	Usage:
+	    $0 <version>
+EOF
 }
 
-version=`./mknote --version 2>&1` || {
-  code=$?
-  echo "failed get version, exit code: $code"
-  exit $code
+build(){
+    [ x$version == x ] && {
+        usage
+        exit 1
+    }
+
+    GOOS=linux go build -ldflags "-X main.version=$version" -o $target_dir/mknote ./cmd/mknote || {
+        code=$?
+        echo "failed to build, exit code: $code"
+        exit $code
+    }
+
+    if [ -d "$target_dir" ]; then
+      rm -rf "$target_dir/mknote-$version.tar"
+    else
+      mkdir $target_dir
+    fi
+
+    cp -r static $target_dir/
+    cd $target_dir
+    tar -cf "mknote-$version.tar" mknote static
+    rm -rf static
 }
 
-if [ -d $target_dir ]; then
-  rm -rf "$target_dir/$version.tar"
-else
-  mkdir $target_dir
-fi
-
-tar -cf "$target_dir/$version.tar" mknote static/
+build

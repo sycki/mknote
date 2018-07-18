@@ -15,6 +15,7 @@ package view
 
 import (
 	"github.com/sycki/mknote/cmd/mknote/options"
+	"github.com/sycki/mknote/logger"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -23,30 +24,37 @@ import (
 	"strings"
 )
 
-var (
+type View struct {
 	config    *options.Config
-	TEMPL_DIR string
-	SUFFIX    = ".html"
+	templDir  string
+	suffix    string
 	templates map[string]*template.Template
-)
+}
 
-func Init(conf *options.Config) {
-	config = conf
-	TEMPL_DIR = config.HtmlDir
-
-	templates = make(map[string]*template.Template)
-	fileArr, err := ioutil.ReadDir(TEMPL_DIR)
+func NewView(conf *options.Config) *View {
+	html := ".html"
+	templates := make(map[string]*template.Template)
+	fileArr, err := ioutil.ReadDir(conf.HtmlDir)
 	check(err)
 	var filePath, fileName string
 	for _, fileInfo := range fileArr {
 		fileName = fileInfo.Name()
-		if suffix := path.Ext(fileName); suffix != SUFFIX {
+		if suffix := path.Ext(fileName); suffix != html {
 			continue
 		}
-		filePath = TEMPL_DIR + "/" + fileName
+		filePath = conf.HtmlDir + "/" + fileName
 		t := template.Must(template.ParseFiles(filePath))
-		templates[strings.TrimSuffix(fileName, SUFFIX)] = t
+		templates[strings.TrimSuffix(fileName, html)] = t
 	}
+
+	v := &View{
+		config:    conf,
+		templDir:  conf.HtmlDir,
+		suffix:    html,
+		templates: templates,
+	}
+
+	return v
 }
 
 func check(err error) {
@@ -55,13 +63,19 @@ func check(err error) {
 	}
 }
 
-func RendHTML(w http.ResponseWriter, templ string, model *map[string]interface{}) {
-	err := templates[templ].Execute(w, model)
+func (v *View) RendHTML(w http.ResponseWriter, templ string, model *map[string]interface{}) {
+	t, ok := v.templates[templ]
+	if !ok {
+		logger.Error("Not fount template:", templ)
+		return
+	}
+
+	err := t.Execute(w, model)
 	check(err)
 }
 
-func SendHTML(w http.ResponseWriter, templ string) {
-	fileName := TEMPL_DIR + "/" + templ + "/" + SUFFIX
+func (v *View) SendHTML(w http.ResponseWriter, templ string) {
+	fileName := v.templDir + "/" + templ + "/" + v.suffix
 	htmlFile, err := ioutil.ReadFile(fileName)
 	io.WriteString(w, string(htmlFile))
 	check(err)

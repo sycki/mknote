@@ -11,30 +11,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rest
+package controller
 
 import (
 	"encoding/json"
-	"github.com/sycki/mknote/server/persistent"
 	"net/http"
-	"sync"
 )
 
-const (
-	get  = "GET"
-	post = "POST"
-	del  = "DELETE"
-	put  = "PUT"
-)
-
-var (
-	l sync.Mutex
-)
-
-func Index(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) ArticleNavigation(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	if method == get {
-		articleIndex, err := persistent.GetTags()
+		articleIndex, err := m.storage.GetTags()
 		if err != nil {
 			panic(err)
 		}
@@ -43,11 +30,11 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Article(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Article(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	uri := r.URL.Path[len("/api/v1/articles/"):]
 	if method == get {
-		articleTag, err := persistent.GetArticle(uri)
+		articleTag, err := m.storage.GetArticle(uri)
 		if err != nil {
 			panic(err)
 		}
@@ -56,37 +43,37 @@ func Article(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Like(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Like(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	artID := r.URL.Path[len("/api/v1/like/"):]
 
 	if method == post {
-		l.Lock()
-		defer l.Unlock()
-		art, err := persistent.GetArticle(artID)
+		m.l.Lock()
+		defer m.l.Unlock()
+		art, err := m.storage.GetArticle(artID)
 		if err != nil {
 			panic(err)
 		}
 		art.Like_count += 1
-		if _, err2 := persistent.UpdateArtcile(art); err != nil {
+		if _, err2 := m.storage.UpdateArtcile(art); err != nil {
 			panic(err2)
 		}
 	}
 }
 
-func Visit(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Visit(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	artID := r.URL.Path[len("/api/v1/visit/articles/"):]
 
 	if method == post {
-		l.Lock()
-		defer l.Unlock()
-		art, err := persistent.GetArticle(artID)
+		m.l.Lock()
+		defer m.l.Unlock()
+		art, err := m.storage.GetArticle(artID)
 		if err != nil {
 			panic(err)
 		}
 		art.Viewer_count += 1
-		if _, err2 := persistent.UpdateArtcile(art); err != nil {
+		if _, err2 := m.storage.UpdateArtcile(art); err != nil {
 			panic(err2)
 		}
 	}

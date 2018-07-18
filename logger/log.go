@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"github.com/sycki/mknote/cmd/mknote/options"
 )
 
 const (
@@ -32,41 +31,16 @@ const (
 )
 
 var (
-	level int
-	g     *log.Logger
+	level = 1
+	out   = log.New(os.Stdout, "", log.LstdFlags)
 )
 
-func Init(conf *options.Config) {
-	level = conf.LogLevel
-	logFile := conf.LogFile
-	logPath := filepath.Dir(logFile)
-
-	// create all parent directory if not exists
-	_, err := os.Stat(logPath)
-	if os.IsNotExist(err) {
-		err := os.MkdirAll(logPath, 0666)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// open log file handle and create log file if not exists
-	out, err1 := os.OpenFile(logFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-
-	// postpone action to main method execut finish of the close handler
-	// if not call close hook, the file handler will be gc recycle
-	//	defer out.Close()
-
-	if err1 != nil {
-		panic(err1)
-	}
-
-	log.Println("for log output to:", logFile)
-	g = log.New(out, "", log.LstdFlags)
+func SetLevel(l int) {
+	level = l
 }
 
 func GetLogger() *log.Logger {
-	return g
+	return out
 }
 
 func format(pre string, megs ...interface{}) string {
@@ -80,31 +54,31 @@ func format(pre string, megs ...interface{}) string {
 
 func Debug(megs ...interface{}) {
 	if level <= 0 {
-		g.Print(format(debug, megs))
+		out.Print(format(debug, megs))
 	}
 }
 
 func Info(megs ...interface{}) {
 	if level <= 1 {
-		g.Print(format(info, megs))
+		out.Print(format(info, megs))
 	}
 }
 
 func Warn(megs ...interface{}) {
 	if level <= 2 {
-		g.Print(format(warn, megs))
+		out.Print(format(warn, megs))
 	}
 }
 
 func Error(megs ...interface{}) {
 	if level <= 3 {
-		g.Print(format(errors, megs))
+		out.Print(format(errors, megs))
 	}
 }
 
 func Fatal(megs ...interface{}) {
 	if level <= 4 {
-		g.Print(format(fatal, megs))
+		out.Print(format(fatal, megs))
 		os.Exit(13)
 	}
 }
