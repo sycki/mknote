@@ -73,7 +73,6 @@ function article_like(artID){
 }
 
 function visit(){
-    artID = window.location.pathname
 	apitor("POST", "/v1/visit" + window.location.pathname, function(){});
 }
 
