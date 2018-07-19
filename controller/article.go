@@ -45,7 +45,7 @@ func (m *Manager) Article(w http.ResponseWriter, r *http.Request) {
 
 func (m *Manager) Like(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
-	artID := r.URL.Path[len("/api/v1/like/"):]
+	artID := r.URL.Path[len("/v1/like/"):]
 
 	if method == post {
 		m.l.Lock()
@@ -63,7 +63,7 @@ func (m *Manager) Like(w http.ResponseWriter, r *http.Request) {
 
 func (m *Manager) Visit(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
-	artID := r.URL.Path[len("/api/v1/visit/articles/"):]
+	artID := r.URL.Path[len("/v1/visit/articles/"):]
 
 	if method == post {
 		m.l.Lock()

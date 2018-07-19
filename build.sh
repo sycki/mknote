@@ -1,39 +1,75 @@
-#!/bin/bash
-
-set -e
-target_dir="_output"
-version=$1
-cd `dirname $0`
+#!/bin/bash -e
 
 usage(){
-    cat <<-EOF
-	Usage:
-	    $0 <version>
+  cat <<EOF
+Usage:
+    $0 [bin | tar | install [path]]
+Example:
+    $0 install /usr/local/mknote
 EOF
 }
 
-build(){
-    [ x$version == x ] && {
-        usage
-        exit 1
-    }
+# build binary
+bin(){
+  [ x$version == x ] && {
+    usage
+    exit 1
+  }
 
-    GOOS=linux go build -ldflags "-X main.version=$version" -o $target_dir/mknote ./cmd/mknote || {
-        code=$?
-        echo "failed to build, exit code: $code"
-        exit $code
-    }
-
-    if [ -d "$target_dir" ]; then
-      rm -rf "$target_dir/mknote-$version.tar"
-    else
-      mkdir $target_dir
-    fi
-
-    cp -r static $target_dir/
-    cd $target_dir
-    tar -cf "mknote-$version.tar" mknote static
-    rm -rf static
+  mkdir -p "_output"
+  GOOS=linux go build -ldflags "-X main.version=$version" -o _output/mknote ./cmd/mknote || {
+    code=$?
+    echo "failed to build, exit code: $code"
+    exit $code
+  }
 }
 
-build
+# make tar ball
+tarball(){
+  rm -rf "_output/mknote-$version"
+  cp -r build _output/mknote-$version
+  cd _output
+  cp mknote mknote-$version/bin/
+  rm -rf "mknote-$version.tar"
+  tar -cf "mknote-$version.tar" mknote
+}
+
+install(){
+  local dir=$1
+  [[ x$dir == x ]] && dir=/usr/local/mknote
+  echo 'Prepare install mknote to $dir'
+
+  [ -e $dir ] && {
+    echo 'The dir is exists already! at $dir'
+    exit 1
+  }
+
+  cp -r _output/mknote-$version $dir && {
+    echo 'Successful install mknote to $dir'
+  }
+
+  return 0
+}
+
+cd `dirname $0`
+version=$(<version)
+cmd=$1
+
+case $cmd in
+  -h|--help)
+    usage
+    ;;
+  bin)
+    bin
+    ;;
+  tar)
+    bin && tarball
+    ;;
+  install)
+    bin && tarball && install $2
+    ;;
+  *)
+    bin
+    ;;
+esac
+
