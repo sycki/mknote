@@ -5,70 +5,66 @@ mknote is a simple and quick blogging system, No database, No login required, On
 * [中文文档](https://github.com/sycki/mknote/blob/master/README_CH.md)
 * [English doc](https://github.com/sycki/mknote)
 
-## Development guide
-### Clone source code
-You can fork the project first, Also can direct clone it.
+## Quick start
+Before you start, please make sure you have installed golang and configured the GOPATH environment variable.
+
+### Install mknote
+Where /usr/local/mknote refers to the installation path and must be a directory that does not exist.
 ```
-cd $GOPATH/src
-git clone https://github.com/sycki/mknote.git
+go get github.com/sycki/mknote
+$GOPATH/src/github.com/sycki/mknote/build.sh install /usr/local/mknote
 ```
 
-### Development
-Import the project to your IDE, Edition it.
-
-### Build and run
+Confirm installed.
 ```
-cd $GOPATH/src/mknote
-go build -v mknote
-sudo ./mknote
+cd /usr/local/mknote/ && ls
+articles  bin  conf  f  static
 ```
 
-## Usage guide
-### Download
-Download latest binary tarball at release page.
-[https://github.com/sycki/mknote/releases](https://github.com/sycki/mknote/releases)
-
-### Uncompress
+### Launch mknote
+Usually started in https mode, you need to specify your certificate file and the final domain name.
 ```
-mkdir /usr/local/mknote/
-tar -xf mknote-v2.2.tar -C /usr/local/mknote/
-```
-
-### Run
-```
-/usr/local/sycki-mknote/mknote &
-```
-
-### Run with TLS
-Specify your cert and key file by options `--tls-cert` and `--tls-key`, If you want start it with TLS mode.
-```
-/usr/local/sycki-mknote/mknote \
+bin/mknote \
+--hostname blog.domain.com \
+--tls=true \
 --tls-cert /etc/ssl/cert.pem \
---tls-key /etc/ssl/key.pem &
+--tls-key /etc/ssl/key.pem
 ```
 
-### Add articles
-Copy your *.md files to `/usr/local/mknote/articles/`, You can create subdirectory in `articles`, And at most 1 level.
+Or start it in http mode:
 ```
-cd /usr/local/mknote/
-mkdir articles/mknote
-echo "# mknote" > articles/mknote/README.md
+bin/mknote
 ```
 
-Copy your images to `/usr/local/mknote/uploads/`.
+mknote provides many useful options, view all options with the following command:
 ```
-cp scenery.png /usr/local/mknote/uploads/
-```
-
-After then refrence they in your articles.
-```
-![scenery](/uploads/scenery.png)
+bin/mknote --help
 ```
 
-### Visit
-Visit `localhost` in your browser.
+### Writing an article
+Create a new article category and write your first article.
+```
+mkdir articles/java
+echo '# 第一篇文章' > articles/java/first.md
+```
+
+Now you can access `http://localhost` in your browser.
+
+## File download server
+If you need to reference the image in your article, just put your image in the /usr/local/mknote/f/ directory, which can be specified when starting mknote.
+```
+cp scenery.png /usr/local/mknote/f/
+```
+
+Then reference it in the article
+```
+![scenery](/f/scenery.png)
+```
+
+In fact, you can place any file in this directory, so that others can download the file anywhere. This function is very useful for many people. You can add as many directories as you like in the /usr/local/mknote/f/ directory. To distinguish your files.
 
 ## Refrence
 * https://github.com/howeyc/fsnotify
 * https://github.com/russross/blackfriday
 * https://github.com/sindresorhus/github-markdown-css
+

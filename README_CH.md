@@ -15,10 +15,15 @@ go get github.com/sycki/mknote
 $GOPATH/src/github.com/sycki/mknote/build.sh install /usr/local/mknote
 ```
 
+### 确认已经安装好
+```
+cd /usr/local/mknote && ls
+articles  bin  conf  f  static
+```
+
 ### 启动mknote
 通常以https方式启动，这时你需要指定你的证书文件和最终的域名
 ```
-cd /usr/local/mknote/bin/mknote/articles/
 bin/mknote \
 --hostname blog.domain.com \
 --tls=true \
