@@ -39,7 +39,8 @@ type Config struct {
 func NewDefaultConfig() *Config {
 	// setting up default work location
 	self, _ := filepath.Abs(os.Args[0])
-	workDir := filepath.Dir(self)
+	binDir := filepath.Dir(self)
+	workDir := filepath.Dir(binDir)
 	Instance = &Config{
 		"",
 		workDir,

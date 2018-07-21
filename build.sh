@@ -17,7 +17,7 @@ bin(){
   }
 
   mkdir -p "_output"
-  GOOS=linux go build -ldflags "-X main.version=$version" -o _output/mknote ./cmd/mknote || {
+  GOOS=$os go build -ldflags "-X main.version=$version" -o _output/mknote ./cmd/mknote || {
     code=$?
     echo "failed to build, exit code: $code"
     exit $code
@@ -26,12 +26,12 @@ bin(){
 
 # make tar ball
 tarball(){
-  rm -rf "_output/mknote-$version"
-  cp -r build _output/mknote-$version
+  rm -rf "_output/$name"
+  cp -r build _output/$name
   cd _output
-  cp mknote mknote-$version/bin/
-  rm -rf "mknote-$version.tar"
-  tar -cf "mknote-$version.tar" mknote
+  cp mknote $name/bin/
+  rm -rf "$name.tar.gz"
+  tar -zcf "$name.tar.gz" $name
 }
 
 install(){
@@ -44,7 +44,7 @@ install(){
     exit 1
   }
 
-  cp -r _output/mknote-$version $dir && {
+  cp -r _output/$name $dir && {
     echo 'Successful install mknote to $dir'
   }
 
@@ -53,6 +53,8 @@ install(){
 
 cd `dirname $0`
 version=$(<version)
+os=linux
+name=mknote-$version-$os
 cmd=$1
 
 case $cmd in
