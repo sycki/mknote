@@ -14,7 +14,9 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/sycki/mknote/logger"
 	"net/http"
 )
 
@@ -75,6 +77,31 @@ func (m *Manager) Visit(w http.ResponseWriter, r *http.Request) {
 		art.Viewer_count += 1
 		if _, err2 := m.storage.UpdateArtcile(art); err != nil {
 			panic(err2)
+		}
+	}
+}
+
+func (m *Manager) Pprof(w http.ResponseWriter, r *http.Request) {
+	method := r.Method
+	action := r.URL.Path[len("/v1/manage/pprof/"):]
+
+	if method == post {
+		if action == "open" {
+			if m.pprof == nil {
+				m.pprof = &http.Server{Addr: ":" + m.config.DebugPort, Handler: nil, ErrorLog: logger.GetLogger()}
+				go func() {
+					m.pprof.ListenAndServe()
+				}()
+				logger.Info("pprofile server is started on: ", m.config.DebugPort)
+				w.Write([]byte("open"))
+			}
+		} else if action == "close" {
+			if m.pprof != nil {
+				m.pprof.Shutdown(context.Background())
+				m.pprof = nil
+				logger.Info("pprofile server is stopped gracefully")
+				w.Write([]byte("close"))
+			}
 		}
 	}
 }

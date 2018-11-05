@@ -14,10 +14,14 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/sycki/mknote/cmd/mknote/options"
-	"github.com/sycki/mknote/view"
-	"github.com/sycki/mknote/storage"
+	"context"
+	"github.com/sycki/mknote/logger"
+	"net/http"
 	"sync"
+
+	"github.com/sycki/mknote/cmd/mknote/options"
+	"github.com/sycki/mknote/storage"
+	"github.com/sycki/mknote/view"
 )
 
 const (
@@ -32,6 +36,7 @@ type Manager struct {
 	view    *view.View
 	config  *options.Config
 	storage *storage.Manager
+	pprof   *http.Server
 }
 
 func NewManager(conf *options.Config, storage *storage.Manager) *Manager {
@@ -39,5 +44,12 @@ func NewManager(conf *options.Config, storage *storage.Manager) *Manager {
 		config:  conf,
 		view:    view.NewView(conf),
 		storage: storage,
+	}
+}
+
+func (m *Manager) Close() {
+	if m.pprof != nil {
+		m.pprof.Shutdown(context.Background())
+		logger.Info("pprofile server is stopped gracefully")
 	}
 }

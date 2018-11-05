@@ -45,7 +45,7 @@ bin/mknote --help
 Create a new article category and write your first article.
 ```
 mkdir articles/java
-echo '# 第一篇文章' > articles/java/first.md
+echo '# First article' > articles/java/first.md
 ```
 
 Now you can access `http://localhost` in your browser.
@@ -63,7 +63,23 @@ Then reference it in the article
 
 In fact, you can place any file in this directory, so that others can download the file anywhere. This function is very useful for many people. You can add as many directories as you like in the /usr/local/mknote/f/ directory. To distinguish your files.
 
-## Refrence
+## Debug
+Open debug feature
+```
+curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/open
+```
+
+Analyse your mknote using the go tool `go profile`
+```
+go tool pprof http://sycki.com:8000/debug/pprof/profile
+```
+
+Close debug feature
+```
+curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/close
+```
+
+## Reference
 * https://github.com/howeyc/fsnotify
 * https://github.com/russross/blackfriday
 * https://github.com/sindresorhus/github-markdown-css

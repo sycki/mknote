@@ -29,7 +29,7 @@ tarball(){
   rm -rf "_output/$name"
   cp -r build _output/$name
   cd _output
-  cp mknote $name/bin/
+  mv mknote $name/bin/
   rm -rf "$name.tar.gz"
   tar -zcf "$name.tar.gz" $name
 }
@@ -37,15 +37,17 @@ tarball(){
 install(){
   local dir=$1
   [[ x$dir == x ]] && dir=/usr/local/mknote
-  echo 'Prepare install mknote to $dir'
+  echo "Prepare install mknote to $dir"
 
   [ -e $dir ] && {
-    echo 'The dir is exists already! at $dir'
+    echo "The dir is exists already: $dir"
     exit 1
   }
 
   cp -r _output/$name $dir && {
-    echo 'Successful install mknote to $dir'
+    echo "Successful install mknote to $dir"
+    echo 'Start mknote command:'
+    echo -e "\t$dir/start.sh"
   }
 
   return 0
@@ -74,4 +76,3 @@ case $cmd in
     bin
     ;;
 esac
-

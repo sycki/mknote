@@ -15,14 +15,16 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"runtime/debug"
+
 	"github.com/sycki/mknote/cmd/mknote/options"
 	"github.com/sycki/mknote/controller"
 	"github.com/sycki/mknote/logger"
-	"net/http"
-	"runtime/debug"
-	"fmt"
 )
 
+// Server listen service port and map requests to handlers
 type Server struct {
 	mux            *http.ServeMux
 	config         *options.Config
@@ -30,6 +32,7 @@ type Server struct {
 	redirectServer *http.Server
 }
 
+// NewServer initializes a new server from config
 func NewServer(config *options.Config, cm *controller.Manager) *Server {
 	mux := http.NewServeMux()
 
@@ -47,6 +50,7 @@ func NewServer(config *options.Config, cm *controller.Manager) *Server {
 	mux.HandleFunc("/v1/visit/articles/", securityRest(cm.Visit))
 	mux.HandleFunc("/v1/like/", securityRest(cm.Like))
 
+	mux.HandleFunc("/v1/manage/pprof/", securityRest(cm.Pprof))
 	return &Server{
 		config: config,
 		mux:    mux,
@@ -114,21 +118,24 @@ func (s *Server) redirect80(w http.ResponseWriter, r *http.Request) {
 		http.StatusTemporaryRedirect)
 }
 
+// Start the server
 func (s *Server) Start(errCh chan error) {
-	logger.Info("starting server ...")
 	if s.config.IsTls {
-		s.httpServer = &http.Server{Addr: ":443", Handler: s.mux, ErrorLog: logger.GetLogger()}
+		logger.Info(fmt.Sprintf("starting server on port %s and %s ...", s.config.TlsPort, s.config.HttpPort))
+		s.httpServer = &http.Server{Addr: ":" + s.config.TlsPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
 		go s.httpServer.ListenAndServeTLS(s.config.TlsCertFile, s.config.TlsKeyFile)
 
 		logger.Info("redirect all request to tls from http")
-		s.redirectServer = &http.Server{Addr: ":80", Handler: http.HandlerFunc(s.redirect80), ErrorLog: logger.GetLogger()}
+		s.redirectServer = &http.Server{Addr: ":" + s.config.HttpPort, Handler: http.HandlerFunc(s.redirect80), ErrorLog: logger.GetLogger()}
 		go s.redirectServer.ListenAndServe()
-	}else {
-		s.httpServer = &http.Server{Addr: ":80", Handler: s.mux, ErrorLog: logger.GetLogger()}
+	} else {
+		logger.Info(fmt.Sprintf("starting server on port %s ...", s.config.HttpPort))
+		s.httpServer = &http.Server{Addr: ":" + s.config.HttpPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
 		go s.httpServer.ListenAndServe()
 	}
 }
 
+// Stop the server
 func (s *Server) Stop() {
 	logger.Info("stopping server ...")
 	if s.httpServer != nil {

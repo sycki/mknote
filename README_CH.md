@@ -63,6 +63,22 @@ cp scenery.png /usr/local/mknote/f/
 
 实际上这个目录中你可以放置任意文件，这样别人就可以在任意地方下载这个文件，这个功能对很多人来说非常实用，在`/usr/local/mknote/f/`目录下可以添加任意多的目录来区分你的文件。
 
+## 调试
+打开调试功能
+```
+curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/open
+```
+
+使用`go profile`工具进行分析
+```
+go tool pprof http://sycki.com:8000/debug/pprof/profile
+```
+
+关闭调试功能
+```
+curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/close
+```
+
 ## 引用和参考
 * https://github.com/howeyc/fsnotify
 * https://github.com/russross/blackfriday

@@ -15,14 +15,17 @@ package main
 
 import (
 	"flag"
+	"os"
+	"os/signal"
+	"syscall"
+
+	_ "net/http/pprof"
+
 	"github.com/sycki/mknote/cmd/mknote/options"
 	"github.com/sycki/mknote/controller"
 	"github.com/sycki/mknote/logger"
 	"github.com/sycki/mknote/server"
 	"github.com/sycki/mknote/storage"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var version string
@@ -50,12 +53,12 @@ func main() {
 
 	// create controller manager of page and rest api
 	ctr := controller.NewManager(config, sm)
+	defer ctr.Close()
 
 	// start http server
 	s := server.NewServer(config, ctr)
 	s.Start(errCh)
 	defer s.Stop()
-
 	logger.Info("mknote is started")
 
 	// start listen system signal
