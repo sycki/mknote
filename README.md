@@ -66,17 +66,17 @@ In fact, you can place any file in this directory, so that others can download t
 ## Debug
 Open debug feature
 ```
-curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/open
+curl -X POST -H "<your_header_key>: <value>" https://<hostname>/v1/manage/pprof/open
 ```
 
 Analyse your mknote using the go tool `go profile`
 ```
-go tool pprof http://sycki.com:8000/debug/pprof/profile
+go tool pprof http://<hostname>:8000/debug/pprof/profile
 ```
 
 Close debug feature
 ```
-curl -X POST -H "<your_header_key>: <value>" https://sycki.com/v1/manage/pprof/close
+curl -X POST -H "<your_header_key>: <value>" https://<hostname>/v1/manage/pprof/close
 ```
 
 ## Reference
