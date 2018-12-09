@@ -1,16 +1,3 @@
-/*
-Copyright 2017 sycki.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package logger
 
 import (
@@ -19,66 +6,104 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 const (
-	debug  = "DEBUG"
-	info   = "INFO"
-	warn   = "WARN"
-	errors = "ERROR"
-	fatal  = "FATAL"
+	DEBUG = iota
+	INFO
+	WARN
+	ERROR
+	FATAL
 )
 
 var (
-	level = 1
+	levelText = map[int]string{
+		DEBUG: "DEBUG",
+		INFO:  "INFO",
+		WARN:  "WARN",
+		ERROR: "ERROR",
+		FATAL: "FATAL",
+	}
+	level = INFO
 	out   = log.New(os.Stdout, "", log.LstdFlags)
 )
 
-func SetLevel(l int) {
-	level = l
+func GetLevel(l int) {level = l}
+func SetLevel(l int) {level = l}
+func GetLogger() *log.Logger {return out}
+func SetLogger(o *log.Logger) {out = o}
+
+func output(str string) {
+	out.Print(str)
 }
 
-func GetLogger() *log.Logger {
-	return out
-}
-
-func format(pre string, megs ...interface{}) string {
+func format(level int, megs ...interface{}) string {
 	if megs == nil {
 		return ""
 	}
 	_, file, line, _ := runtime.Caller(2)
 	file = filepath.Base(file)
-	return fmt.Sprintf("%v %v:%v %v\n", pre, file, line, strings.Trim(fmt.Sprint(megs), "[]"))
+	return fmt.Sprintf("%s %s:%d %s", levelText[level], file, line, fmt.Sprintln(megs...))
 }
 
 func Debug(megs ...interface{}) {
-	if level <= 0 {
-		out.Print(format(debug, megs))
+	if level <= DEBUG {
+		output(format(DEBUG, megs...))
+	}
+}
+
+func Debugf(f string, megs ...interface{}) {
+	if level <= DEBUG {
+		output(format(DEBUG, fmt.Sprintf(f, megs...)))
 	}
 }
 
 func Info(megs ...interface{}) {
-	if level <= 1 {
-		out.Print(format(info, megs))
+	if level <= INFO {
+		output(format(INFO, megs...))
+	}
+}
+
+func Infof(f string, megs ...interface{}) {
+	if level <= INFO {
+		output(format(INFO, fmt.Sprintf(f, megs...)))
 	}
 }
 
 func Warn(megs ...interface{}) {
-	if level <= 2 {
-		out.Print(format(warn, megs))
+	if level <= WARN {
+		output(format(WARN, megs...))
+	}
+}
+
+func Warnf(f string, megs ...interface{}) {
+	if level <= WARN {
+		output(format(WARN, fmt.Sprintf(f, megs...)))
 	}
 }
 
 func Error(megs ...interface{}) {
-	if level <= 3 {
-		out.Print(format(errors, megs))
+	if level <= ERROR {
+		output(format(ERROR, megs...))
+	}
+}
+
+func Errorf(f string, megs ...interface{}) {
+	if level <= ERROR {
+		output(format(ERROR, fmt.Sprintf(f, megs...)))
 	}
 }
 
 func Fatal(megs ...interface{}) {
-	if level <= 4 {
-		out.Print(format(fatal, megs))
-		os.Exit(13)
+	if level <= FATAL {
+		output(format(FATAL, megs...))
+		os.Exit(FATAL)
+	}
+}
+
+func Fatalf(f string, megs ...interface{}) {
+	if level <= FATAL {
+		output(format(FATAL, fmt.Sprintf(f, megs...)))
+		os.Exit(FATAL)
 	}
 }

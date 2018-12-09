@@ -1,39 +1,26 @@
 # Marknote
-mknote is a simple and quick blogging system, No database, No login required, Only standerd documents are needed.
+Mknote is an easy-to-use blogging system with no database and no need to log in. Just specify the directory where your price reduction files are located, mknote will automatically discover them and generate pages.
 
 ## Documents
-* [中文文档](https://github.com/sycki/mknote/blob/master/README_CH.md)
+* [中文文档](https://github.com/sycki/mknote/blob/master/README_ZH.md)
 * [English doc](https://github.com/sycki/mknote)
 
 ## Quick start
-Before you start, please make sure you have installed golang and configured the GOPATH environment variable.
-
 ### Install mknote
-Where /usr/local/mknote refers to the installation path and must be a directory that does not exist.
+Go to the [Publish Page](https://github.com/sycki/mknote/releases) to download the latest version of the package and extract it to your favorite directory.
 ```
-go get github.com/sycki/mknote
-$GOPATH/src/github.com/sycki/mknote/build.sh install /usr/local/mknote
-```
-
-Confirm installed.
-```
-cd /usr/local/mknote/ && ls
-articles  bin  conf  f  static
+tar -zxf mknote-<version>.tar.gz
+cd mknote-<version>
 ```
 
 ### Launch mknote
-Usually started in https mode, you need to specify your certificate file and the final domain name.
+Usually started in https mode, you need to specify your certificate file and the final domain name, which is used to redirect http requests to https:
 ```
 bin/mknote \
---hostname blog.domain.com \
 --tls=true \
 --tls-cert /etc/ssl/cert.pem \
---tls-key /etc/ssl/key.pem
-```
-
-Or start it in http mode:
-```
-bin/mknote
+--tls-key /etc/ssl/key.pem \
+--hostname blog.domain.com
 ```
 
 mknote provides many useful options, view all options with the following command:
@@ -78,9 +65,3 @@ Close debug feature
 ```
 curl -X POST -H "<your_header_key>: <value>" https://<hostname>/v1/manage/pprof/close
 ```
-
-## Reference
-* https://github.com/howeyc/fsnotify
-* https://github.com/russross/blackfriday
-* https://github.com/sindresorhus/github-markdown-css
-

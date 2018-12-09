@@ -1,39 +1,26 @@
 # Marknote
-mknote是一个简单快速的博客系统，没有数据库，也无需登录，只需指定你的Markdown文件所在的目录，mknote将自动发现它们，并生成页面。
+mknote是一个易于使用的博客系统，没有数据库，也无需登录，只需指定你的Markdown文件所在的目录，mknote将自动发现它们，并生成页面。
 
 ## 文档
-* [中文文档](https://github.com/sycki/mknote/blob/master/README_CH.md)
+* [中文文档](https://github.com/sycki/mknote/blob/master/README_ZH.md)
 * [English doc](https://github.com/sycki/mknote)
 
 ## 快速开始
-开始之前请确认你已经安装了golang，并配置好了GOPATH环境变量。
-
 ### 安装mknote
-其中`/usr/local/mknote`指安装路径，且必须是一个不存在的目录
+进入[发布页面](https://github.com/sycki/mknote/releases)下载最新版本的程序包，然后解压到你喜欢的目录。
 ```
-go get github.com/sycki/mknote
-$GOPATH/src/github.com/sycki/mknote/build.sh install /usr/local/mknote
-```
-
-### 确认已经安装好
-```
-cd /usr/local/mknote && ls
-articles  bin  conf  f  static
+tar -zxf mknote-<version>.tar.gz
+cd mknote-<version>
 ```
 
 ### 启动mknote
-通常以https方式启动，这时你需要指定你的证书文件和最终的域名
+通常以https方式启动，这时你需要指定你的证书文件和最终的域名，该域名用于将http请求重定向到https：
 ```
 bin/mknote \
---hostname blog.domain.com \
 --tls=true \
 --tls-cert /etc/ssl/cert.pem \
---tls-key /etc/ssl/key.pem
-```
-
-或者以http方式启动它
-```
-bin/mknote
+--tls-key /etc/ssl/key.pem \
+--hostname blog.domain.com
 ```
 
 mknote提供了许多有用的选项，用以下命令查看所有选项
@@ -78,9 +65,3 @@ go tool pprof http://<hostname>:8000/debug/pprof/profile
 ```
 curl -X POST -H "<your_header_key>: <value>" https://<hostname>/v1/manage/pprof/close
 ```
-
-## 引用和参考
-* https://github.com/howeyc/fsnotify
-* https://github.com/russross/blackfriday
-* https://github.com/sindresorhus/github-markdown-css
-
