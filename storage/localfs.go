@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/sycki/mknote/logger"
 	"github.com/sycki/mknote/storage/structs"
 	"io/ioutil"
@@ -56,8 +57,7 @@ func (f *Manager) Start(errCh chan error) {
 	}
 
 	//var flags uint32 = syscall.IN_ALL_EVENTS | syscall.IN_CREATE | syscall.IN_DELETE | syscall.IN_MOVE
-	var flags uint32 = 0xfff
-	err = watcher.AddWatch(f.artDir, flags)
+	err = watcher.Watch(f.artDir)
 	if err != nil {
 		errCh <- err
 		return
@@ -66,7 +66,7 @@ func (f *Manager) Start(errCh chan error) {
 	//将根文章目录下的所有子目录加入到监听列表
 	subDirs, _ := ioutil.ReadDir(f.artDir)
 	for _, sub := range subDirs {
-		watcher.AddWatch(f.artDir+"/"+sub.Name(), flags)
+		watcher.Watch(f.artDir+"/"+sub.Name())
 	}
 
 	go func() {
@@ -81,7 +81,7 @@ func (f *Manager) Start(errCh chan error) {
 				if ev.IsCreate() {
 					if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
 						logger.Info("fsmonitor add watch:", ev.Name)
-						watcher.AddWatch(ev.Name, flags)
+						watcher.Watch(ev.Name)
 					}
 				} else if ev.IsDelete() {
 					if f, err := os.Stat(ev.Name); err == nil && f.IsDir() {
@@ -157,10 +157,32 @@ func (f *Manager) GetTags() ([]*structs.ArticleTag, error) {
 	}
 
 	f.latestIndex = tagArr
+	f.UpdateIndexArticle(tagArr)
 	return tagArr, nil
 }
 
-func (f *Manager) UpdateMetadata(art *structs.Article) (*structs.Article, error) {
+// 将指定的索引信息写入索引文章`mknote/article-map`并保留旧meta
+func (f *Manager) UpdateIndexArticle(tags []*structs.ArticleTag) {
+	indexArticle, err := f.GetArticle("mknote/article-map")
+	if err != nil {
+		logger.Error("Failed to UpdateIndexArticle:", err)
+		return
+	}
+
+	content := "# 文章列表\n"
+	for _, tag := range tags {
+		content += fmt.Sprintf("\n## %s\n", tag.Name)
+		for _, art := range tag.Articles {
+			content += fmt.Sprintf("* [%s](/articles/%s)\n", art.Title, art.Id)
+		}
+	}
+
+	indexArticle.Content = content
+	f.UpdateArtcile(indexArticle)
+}
+
+// 用art中的meta更新文章
+func (f *Manager) UpdateArticleMetadata(art *structs.Article) (*structs.Article, error) {
 	artFile := f.artDir + "/" + art.Id + ".md"
 	fileStr, e := ioutil.ReadFile(artFile)
 	if e != nil {
@@ -174,6 +196,7 @@ func (f *Manager) UpdateMetadata(art *structs.Article) (*structs.Article, error)
 	return f.UpdateArtcile(art)
 }
 
+// 用art中的content和Author、Like_count等元信息更新文章
 func (f *Manager) UpdateArtcile(art *structs.Article) (*structs.Article, error) {
 	artFile := f.artDir + "/" + art.Id + ".md"
 	artStr := art.Content
@@ -219,7 +242,7 @@ func (f *Manager) GetArticle(artID string) (*structs.Article, error) {
 	//这里不用加锁，因为短时间内不会加增浏览数和点赞数，即执行多次写操作也不会有所影响
 	if len(s) < 2 {
 		file, _ := os.Stat(artFile)
-		return f.UpdateMetadata(&structs.Article{
+		return f.UpdateArticleMetadata(&structs.Article{
 			Id:           artID,
 			Author:       f.config.ArticleAuthor,
 			Viewer_count: 0,

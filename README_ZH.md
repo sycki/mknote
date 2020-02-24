@@ -14,13 +14,12 @@ cd mknote-<version>
 ```
 
 ### 启动mknote
-通常以https方式启动，这时你需要指定你的证书文件和最终的域名，该域名用于将http请求重定向到https：
+通常以https方式启动，这时你需要指定你的证书文件，启动后，它会自动将80端口的请求重定到443端口：
 ```
 bin/mknote \
---tls=true \
+--tls \
 --tls-cert /etc/ssl/cert.pem \
---tls-key /etc/ssl/key.pem \
---hostname blog.domain.com
+--tls-key /etc/ssl/key.pem
 ```
 
 mknote提供了许多有用的选项，用以下命令查看所有选项

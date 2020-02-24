@@ -14,7 +14,7 @@ cd mknote-<version>
 ```
 
 ### Launch mknote
-Usually started in https mode, you need to specify your certificate file and the final domain name, which is used to redirect http requests to https:
+It is usually started using HTTPS, so you need to specify your certificate file. Once started, it will automatically reset the request for port 80 to port 443:
 ```
 bin/mknote \
 --tls=true \

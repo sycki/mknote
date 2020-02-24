@@ -19,7 +19,7 @@ func (m *Manager) ArticleNavigation(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (m *Manager) Article(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) Articles(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	uri := r.URL.Path[len("/api/v1/articles/"):]
 	if method == get {

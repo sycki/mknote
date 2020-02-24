@@ -25,19 +25,22 @@ func NewServer(config *options.Config, cm *controller.Manager) *Server {
 
 	// page handler
 	mux.HandleFunc("/", securityHandler(cm.Index))
-	mux.HandleFunc("/articles/", securityHandler(cm.Home))
+	mux.HandleFunc("/articles/", securityHandler(cm.Article))
 	mux.HandleFunc("/f/", securityStaticHandler(cm.Download))
 
 	// static resource
-	mux.HandleFunc("/assets/", securityStaticHandler(cm.Assets))
+	mux.HandleFunc("/js/", securityStaticHandler(cm.Static))
+	mux.HandleFunc("/css/", securityStaticHandler(cm.Static))
+	mux.HandleFunc("/img/", securityStaticHandler(cm.Static))
 
 	// restful API
 	mux.HandleFunc("/v1/index", securityRest(cm.ArticleNavigation))
-	mux.HandleFunc("/v1/articles/", securityRest(cm.Article))
+	mux.HandleFunc("/v1/articles/", securityRest(cm.Articles))
 	mux.HandleFunc("/v1/visit/articles/", securityRest(cm.Visit))
 	mux.HandleFunc("/v1/like/", securityRest(cm.Like))
 
 	mux.HandleFunc("/v1/manage/pprof/", securityRest(cm.Pprof))
+
 	return &Server{
 		config: config,
 		mux:    mux,
@@ -90,11 +93,9 @@ func securityHandler(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (s *Server) redirect80(w http.ResponseWriter, r *http.Request) {
-	hostname := s.config.HostName
-	if hostname == "" {
-		hostname = r.Host
-	}
+func (s *Server) redirectHttp(w http.ResponseWriter, r *http.Request) {
+	hostname := r.Host
+
 	target := "https://" + hostname + r.URL.Path
 	if len(r.URL.RawQuery) > 0 {
 		target += "?" + r.URL.RawQuery
@@ -108,16 +109,18 @@ func (s *Server) redirect80(w http.ResponseWriter, r *http.Request) {
 // Start the server
 func (s *Server) Start(errCh chan error) {
 	if s.config.IsTls {
-		logger.Info(fmt.Sprintf("starting server on port %s and %s ...", s.config.TlsPort, s.config.HttpPort))
-		s.httpServer = &http.Server{Addr: ":" + s.config.TlsPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
+		logger.Info(fmt.Sprintf("starting server on port %s and %s ...", s.config.TlsAddrPort, s.config.HttpAddrPort))
+		s.httpServer = &http.Server{Addr: s.config.TlsAddrPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
 		go s.httpServer.ListenAndServeTLS(s.config.TlsCertFile, s.config.TlsKeyFile)
 
-		logger.Info("redirect all request to tls from http")
-		s.redirectServer = &http.Server{Addr: ":" + s.config.HttpPort, Handler: http.HandlerFunc(s.redirect80), ErrorLog: logger.GetLogger()}
-		go s.redirectServer.ListenAndServe()
+		if s.config.IsRedirectHttp {
+			logger.Info("redirect all request to tls from http")
+			s.redirectServer = &http.Server{Addr: s.config.HttpAddrPort, Handler: http.HandlerFunc(s.redirectHttp), ErrorLog: logger.GetLogger()}
+			go s.redirectServer.ListenAndServe()
+		}
 	} else {
-		logger.Info(fmt.Sprintf("starting server on port %s ...", s.config.HttpPort))
-		s.httpServer = &http.Server{Addr: ":" + s.config.HttpPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
+		logger.Info(fmt.Sprintf("starting server on port %s ...", s.config.HttpAddrPort))
+		s.httpServer = &http.Server{Addr: s.config.HttpAddrPort, Handler: s.mux, ErrorLog: logger.GetLogger()}
 		go s.httpServer.ListenAndServe()
 	}
 }

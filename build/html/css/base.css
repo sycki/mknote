@@ -307,7 +307,6 @@ nav li:hover {
 /* 赞按钮中的文字 */
 .state-line button span {
 	display:inline-block;
-	font-size:bold;
 	transform:translateY(25%);
 
 }
@@ -318,7 +317,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../icon/like.svg);
+    background-image:url(../img/like.svg);
 
 }
 
@@ -328,7 +327,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../icon/dislike.svg);
+    background-image:url(../img/dislike.svg);
 
 }
 
@@ -352,7 +351,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../icon/eyes.svg);
+    background-image:url(../img/eyes.svg);
 
 }
 

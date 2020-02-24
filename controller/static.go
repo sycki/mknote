@@ -4,8 +4,8 @@ import (
 	"net/http"
 )
 
-func (m *Manager) Assets(w http.ResponseWriter, r *http.Request) {
-	file := m.config.StaticDir + r.URL.Path
+func (m *Manager) Static(w http.ResponseWriter, r *http.Request) {
+	file := m.config.HtmlDir + r.URL.Path
 	http.ServeFile(w, r, file)
 }
 

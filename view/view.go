@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
-	"strings"
 )
 
 type View struct {
@@ -21,7 +20,7 @@ type View struct {
 func NewView(conf *options.Config) *View {
 	html := ".html"
 	templates := make(map[string]*template.Template)
-	fileArr, err := ioutil.ReadDir(conf.HtmlDir)
+	fileArr, err := ioutil.ReadDir(conf.HtmlDir + "/template/")
 	check(err)
 	var filePath, fileName string
 	for _, fileInfo := range fileArr {
@@ -29,9 +28,9 @@ func NewView(conf *options.Config) *View {
 		if suffix := path.Ext(fileName); suffix != html {
 			continue
 		}
-		filePath = conf.HtmlDir + "/" + fileName
+		filePath = conf.HtmlDir + "/template/" + fileName
 		t := template.Must(template.ParseFiles(filePath))
-		templates[strings.TrimSuffix(fileName, html)] = t
+		templates[fileName] = t
 	}
 
 	v := &View{
@@ -62,7 +61,7 @@ func (v *View) RendHTML(w http.ResponseWriter, templ string, model *map[string]i
 }
 
 func (v *View) SendHTML(w http.ResponseWriter, templ string) {
-	fileName := v.templDir + "/" + templ + "/" + v.suffix
+	fileName := v.templDir + "/" + templ
 	htmlFile, err := ioutil.ReadFile(fileName)
 	io.WriteString(w, string(htmlFile))
 	check(err)
