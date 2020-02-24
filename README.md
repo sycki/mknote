@@ -17,10 +17,9 @@ cd mknote-<version>
 It is usually started using HTTPS, so you need to specify your certificate file. Once started, it will automatically reset the request for port 80 to port 443:
 ```
 bin/mknote \
---tls=true \
+--tls \
 --tls-cert /etc/ssl/cert.pem \
---tls-key /etc/ssl/key.pem \
---hostname blog.domain.com
+--tls-key /etc/ssl/key.pem
 ```
 
 mknote provides many useful options, view all options with the following command:
