@@ -1,7 +1,4 @@
 # generated files where run in local machine
-bin/
-articles/
-uploads/
 *.exe
 *.exe~
 *.orig
@@ -19,7 +16,7 @@ _*/
 *.iml
 
 # Vscode files
-.vscode
+.vscode/
 
 # Go test binaries
 *.test
