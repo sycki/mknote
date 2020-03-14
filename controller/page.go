@@ -16,7 +16,7 @@ func (m *Manager) Index(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		p := parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock)
+		p := parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock|parser.HardLineBreak)
 		articleHTML := template.HTML(markdown.ToHTML([]byte(article.Content), p, nil))
 		article.Content = ""
 
@@ -39,7 +39,7 @@ func (m *Manager) Article(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		p := parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock)
+		p := parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock|parser.HardLineBreak)
 		articleHTML := template.HTML(markdown.ToHTML([]byte(article.Content), p, nil))
 		article.Content = ""
 
