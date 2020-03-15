@@ -211,6 +211,7 @@ nav li:hover {
 
 /* 某目录下的文件列表外框 */
 .article-menu>ul>ul {
+	font-size: small;
     list-style-type: none;
     margin:0px;
     padding:0px 0px 0px 40px;

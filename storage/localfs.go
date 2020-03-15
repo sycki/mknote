@@ -3,8 +3,6 @@ package storage
 import (
 	"bufio"
 	"fmt"
-	"github.com/sycki/mknote/logger"
-	"github.com/sycki/mknote/storage/structs"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -12,7 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sycki/mknote/logger"
+	"github.com/sycki/mknote/storage/structs"
+
 	"context"
+
 	"github.com/howeyc/fsnotify"
 	"github.com/sycki/mknote/cmd/mknote/options"
 )
@@ -169,7 +171,7 @@ func (f *Manager) UpdateIndexArticle(tags []*structs.ArticleTag) {
 		return
 	}
 
-	content := "# 文章列表\n"
+	content := "# 橡果笔记\n\n## 所有文章列表"
 	for _, tag := range tags {
 		content += fmt.Sprintf("\n## %s\n", tag.Name)
 		for _, art := range tag.Articles {
