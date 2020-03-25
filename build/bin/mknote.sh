@@ -48,7 +48,7 @@ cmd::backup() {
     local dir_name=`basename $(pwd)`
     local dt=`date +%Y%m%d`
     cd ..
-    /bin/rm -f "mknote-*.bak.tar.gz"
+    /bin/rm -f mknote-*.bak.tar.gz
     tar -zcf mknote-${dt}.bak.tar.gz $dir_name --exclude f/tmp
     cd $dir_name
 }
