@@ -68,7 +68,7 @@ func (f *Manager) Start(errCh chan error) {
 	//将根文章目录下的所有子目录加入到监听列表
 	subDirs, _ := ioutil.ReadDir(f.artDir)
 	for _, sub := range subDirs {
-		watcher.Watch(f.artDir+"/"+sub.Name())
+		watcher.Watch(f.artDir + "/" + sub.Name())
 	}
 
 	go func() {
@@ -143,11 +143,20 @@ func (f *Manager) GetTags() ([]*structs.ArticleTag, error) {
 	subDirInfos, _ := ioutil.ReadDir(f.artDir)
 	tagArr := []*structs.ArticleTag{}
 	for _, subDirInfo := range subDirInfos {
+		if strings.HasPrefix(subDirInfo.Name(), ".") {
+			continue
+		}
 		if subDirInfo.IsDir() {
 			subDir := subDirInfo.Name()
 			artInfos, _ := ioutil.ReadDir(f.artDir + "/" + subDir)
 			artArr := []*structs.Article{}
 			for _, artInfo := range artInfos {
+				if artInfo.IsDir() {
+					continue
+				}
+				if strings.HasPrefix(artInfo.Name(), ".") {
+					continue
+				}
 				id := "/" + subDir + "/" + artInfo.Name()[:strings.LastIndex(artInfo.Name(), ".")]
 				title, _ := f.GetTitle(id)
 				art := &structs.Article{Id: id, Title: title}
@@ -217,6 +226,11 @@ func (f *Manager) UpdateArtcile(art *structs.Article) (*structs.Article, error) 
 		f.latestArticle = art
 	}
 	return art, err
+}
+
+func (f *Manager) GetMedia(fileName string) ([]byte, error) {
+	filePath := f.artDir + "/" + fileName
+	return ioutil.ReadFile(filePath)
 }
 
 func (f *Manager) GetArticle(artID string) (*structs.Article, error) {
@@ -320,6 +334,9 @@ func (f *Manager) GetLatestArticleID() (string, error) {
 
 	//遍历根文章目录下的所有子目录和文件
 	for _, subDir := range subDirs {
+		if strings.HasPrefix(subDir.Name(), ".") {
+			continue
+		}
 		if subDir.IsDir() {
 			arts, e1 := ioutil.ReadDir(f.artDir + "/" + subDir.Name())
 			if e1 != nil {
@@ -328,6 +345,12 @@ func (f *Manager) GetLatestArticleID() (string, error) {
 			}
 			//遍历某子目录下的所有文章
 			for _, art := range arts {
+				if art.IsDir() {
+					continue
+				}
+				if strings.HasPrefix(art.Name(), ".") {
+					continue
+				}
 				artFile, _ := f.GetArticle("/" + subDir.Name() + "/" + art.Name()[:strings.LastIndex(art.Name(), ".")])
 				//获取该文章的创建时间
 				//如果文章内没有元数据或没有时间信息，则使用文件的修改时间代替

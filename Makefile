@@ -8,10 +8,10 @@ default: clean bin tar
 
 clean:
 	@rm -rf _output
-	@mkdir _output
 
 bin:
 	@echo "building $(PKGNAME)"
+	@mkdir -p _output
 	@cp -r build _output/$(PKGNAME)
 	@GOOS=linux go build $(OPTS) -o _output/$(PKGNAME)/bin/mknote ./cmd/mknote
 	@echo "successful binary to _output/$(PKGNAME)/bin/mknote"

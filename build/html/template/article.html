@@ -21,8 +21,20 @@
 	<link rel='stylesheet' href="/css/base.css" type='text/css' media='all' />
 	<script src="/js/base.min.js" type="text/javascript"></script>
 
+	<!-- 引入 Lightbox -->
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/lightbox2@2.11.5/dist/css/lightbox.min.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/lightbox2@2.11.5/dist/js/lightbox.min.js"></script>
+
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="/css/markdown.css">
+	
+	<script>
+		lightbox.option({
+		  'alwaysShowNavOnTouchDevices': true,
+		  'albumLabel': '%1 / %2'
+		})
+	</script>
 </head>
 <body>
 

@@ -31,7 +31,6 @@ func NewServer(config *options.Config, cm *controller.Manager) *Server {
 	// static resource
 	mux.HandleFunc("/js/", securityStaticHandler(cm.Static))
 	mux.HandleFunc("/css/", securityStaticHandler(cm.Static))
-	mux.HandleFunc("/img/", securityStaticHandler(cm.Static))
 
 	// restful API
 	mux.HandleFunc("/v1/index", securityRest(cm.ArticleNavigation))
