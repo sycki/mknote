@@ -41,11 +41,13 @@ func (m *Manager) Article(w http.ResponseWriter, r *http.Request) {
 
 	if method == get {
 		artId := r.URL.Path[len("/articles/"):]
-		if strings.HasSuffix(artId, ".png") || strings.HasSuffix(artId, ".jpg") || strings.HasSuffix(artId, ".jpeg") || strings.HasSuffix(artId, ".gif") {
+		artIdLower := strings.ToLower(artId)
+		if strings.HasSuffix(artIdLower, ".png") || strings.HasSuffix(artIdLower, ".jpg") || strings.HasSuffix(artIdLower, ".jpeg") || strings.HasSuffix(artIdLower, ".gif") {
 			data, err := m.storage.GetMedia(artId)
 			if err != nil {
 				panic(err)
 			}
+			w.Header().Set("Cache-Control", "public, max-age=31536000") // 长时间缓存
 			w.Write(data)
 			return
 		}
