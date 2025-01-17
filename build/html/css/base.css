@@ -318,7 +318,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../img/like.svg);
+    background-image:url(/img/like.svg);
 
 }
 
@@ -328,7 +328,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../img/dislike.svg);
+    background-image:url(/img/dislike.svg);
 
 }
 
@@ -352,7 +352,7 @@ nav li:hover {
 	float:left;
 	height:24px;
 	width:24px;
-    background-image:url(../img/eyes.svg);
+    background-image:url(/img/eyes.svg);
 
 }
 
